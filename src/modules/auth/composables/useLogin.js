@@ -2,7 +2,7 @@ import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/modules/auth/store.js'
 
 /**
  * useLogin

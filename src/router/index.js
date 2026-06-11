@@ -1,14 +1,19 @@
+// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth.js'
+import { useAuthStore } from '@/modules/auth/store.js'
 
-// ── Lazy imports ──────────────────────────────────────────────
-const LoginView     = () => import('@/modules/auth/views/LoginView.vue')
-const DashboardView = () => import('@/modules/main/views/DashboardView.vue')
+// ── Importa las rutas de cada módulo ──────────────────────────
+import { authRoutes }    from '@/modules/auth/router.js'
+import { mainRoutes } from '@/modules/main/router.js'
 
+// ── Ensambla todas las rutas ──────────────────────────────────
 const routes = [
-  { path: '/',          redirect: '/dashboard' },
-  { path: '/login',     name: 'login',     component: LoginView,     meta: { requiresGuest: true } },
-  { path: '/dashboard', name: 'dashboard', component: DashboardView, meta: { requiresAuth: true  } },
+  { path: '/', redirect: '/dashboard' },
+  
+  ...authRoutes,
+  ...mainRoutes,
+
+  // 404 — siempre al final
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -17,15 +22,21 @@ export const router = createRouter({
   routes,
 })
 
-// ── Guard ─────────────────────────────────────────────────────
+// ── Navigation guard global ───────────────────────────────────
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
   if (!auth.initialized) await auth.fetchMe()
 
-  if (to.meta.requiresAuth  && !auth.isAuthenticated)
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    // Evita redirigir si ya estamos yendo al login
+    if (to.name === 'login') return
     return { name: 'login', query: { redirect: to.fullPath } }
+  }
 
-  if (to.meta.requiresGuest && auth.isAuthenticated)
+  if (to.meta.requiresGuest && auth.isAuthenticated) {
+    // Evita redirigir si ya estamos yendo al dashboard
+    if (to.name === 'dashboard') return
     return { name: 'dashboard' }
+  }
 })

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { authService } from '@/modules/auth/services/auth.service.js'
+// import { authService } from '@/modules/auth/services/auth.service.js'
+import { authService } from '@/services/auth.mock'
 
 export const useAuthStore = defineStore('auth', () => {
   // ── State ──────────────────────────────────────────────
