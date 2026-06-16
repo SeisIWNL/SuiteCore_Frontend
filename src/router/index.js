@@ -5,13 +5,29 @@ import { useAuthStore } from '@/modules/auth/store.js'
 // ── Importa las rutas de cada módulo ──────────────────────────
 import { authRoutes }    from '@/modules/auth/router.js'
 import { mainRoutes } from '@/modules/main/router.js'
+import { networkRoutes } from '@/modules/network/router.js'
+
+// ── Importar el Dashboard layout ──────────────────────────────
+import DashboardLayout from '@/layouts/DashboardLayout.vue'
 
 // ── Ensambla todas las rutas ──────────────────────────────────
 const routes = [
   { path: '/', redirect: '/dashboard' },
   
+  // Auth — sin layout del dashboard
   ...authRoutes,
-  ...mainRoutes,
+
+  // Dashboard — layout global compartido, todos los módulos como hijos
+  {
+    path: '/',
+    component: DashboardLayout,
+    meta: { requiresAuth: true },
+    children: [
+      ...mainRoutes,
+      ...networkRoutes,
+      // ...serversRoutes,   ← cada módulo nuevo se agrega aquí
+    ],
+  },
 
   // 404 — siempre al final
   { path: '/:pathMatch(.*)*', redirect: '/' },

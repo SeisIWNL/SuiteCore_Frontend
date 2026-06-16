@@ -1,22 +1,24 @@
 <template>
   <div class="auth-shell">
 
-    <header class="auth-shell__header">
-      <div class="logo">
-        <span class="logo-mark">SC</span>
-        <span class="logo-name">SuiteCore</span>
-      </div>
-      <span class="auth-shell__version">v1.0.0</span>
-    </header>
+    <!-- Grid de fondo decorativo -->
+    <div class="auth-shell__grid" aria-hidden="true" />
 
+    <!-- Punto de luz superior -->
+    <div class="auth-shell__glow" aria-hidden="true" />
+
+    <!-- Contenido central -->
     <main class="auth-shell__main">
       <slot />
     </main>
 
+    <!-- Footer minimalista -->
     <footer class="auth-shell__footer">
-      © {{ year }} SuiteCore &nbsp;·&nbsp;
-      <a href="#">Política de privacidad</a> &nbsp;·&nbsp;
-      <a href="#">Soporte</a>
+      <span>SuiteCore NOC</span>
+      <span class="auth-shell__dot">·</span>
+      <span>v1.0.0</span>
+      <span class="auth-shell__dot">·</span>
+      <span>© {{ year }}</span>
     </footer>
 
   </div>
@@ -27,35 +29,58 @@ const year = new Date().getFullYear()
 </script>
 
 <style scoped>
-.auth-shell { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
 
-/* Header */
-.auth-shell__header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 13px 24px;
-  background: var(--surface); border-bottom: 1px solid var(--border);
+/* Grid punteado de fondo */
+.auth-shell__grid {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: .45;
+  pointer-events: none;
 }
-.logo { display: flex; align-items: center; gap: 8px; }
-.logo-mark {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 27px; height: 27px;
-  background: var(--primary); color: #fff;
-  border-radius: var(--radius-sm);
-  font-size: .72rem; font-weight: 800; letter-spacing: -.5px;
+
+/* Luz difusa desde arriba */
+.auth-shell__glow {
+  position: absolute;
+  top: -120px; left: 50%; transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse, rgba(57,211,83,.07) 0%, transparent 70%);
+  pointer-events: none;
 }
-.logo-name { font-size: .92rem; font-weight: 700; color: var(--text-1); }
-.auth-shell__version { font-size: .7rem; color: var(--text-3); }
 
 /* Main */
 .auth-shell__main {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 32px 16px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  position: relative;
+  z-index: 1;
 }
 
 /* Footer */
 .auth-shell__footer {
-  text-align: center; padding: 14px;
-  font-size: .72rem; color: var(--text-3);
-  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  font-size: .68rem;
+  color: var(--text-3);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 1;
 }
+.auth-shell__dot { color: var(--border-mid); }
 </style>

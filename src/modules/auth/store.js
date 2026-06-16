@@ -1,21 +1,33 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-//import { authService } from '@/services/auth.mock'
 import { authService } from '@/modules/auth/services/auth.service.js'
 
 export const useAuthStore = defineStore('auth', () => {
-  // ── State ──────────────────────────────────────────────
-  const user        = ref(null)
-  const token       = ref(localStorage.getItem('auth_token') ?? sessionStorage.getItem('auth_token'))
-  const expiresAt   = ref(localStorage.getItem('auth_expires') ?? null)
-  const initialized = ref(false)
 
-  // ── Getters ────────────────────────────────────────────
+  // ── Helpers para leer storage ────────────────────────────────
+  function fromStorage(key) {
+    return localStorage.getItem(key) ?? sessionStorage.getItem(key) ?? null
+  }
+
+  // ── State — se inicializa desde storage al arrancar ──────────
+  const token     = ref(fromStorage('auth_token'))
+  const expiresAt = ref(fromStorage('auth_expires'))
+  const user      = ref(() => {
+    const raw = fromStorage('auth_user')
+    if (!raw) return null
+    try { return JSON.parse(raw) } catch { return null }
+  })
+
+  // ── Getters ──────────────────────────────────────────────────
   const isAuthenticated = computed(() => {
     if (!token.value || !user.value) return false
-    // Verifica que el token no haya expirado
-    if (expiresAt.value && new Date() > new Date(expiresAt.value)) return false
-    return true
+    if (!expiresAt.value) return false
+    return new Date() < new Date(expiresAt.value)
+  })
+
+  const msUntilExpiry = computed(() => {
+    if (!expiresAt.value) return 0
+    return Math.max(0, new Date(expiresAt.value).getTime() - Date.now())
   })
 
   const userInitials = computed(() => {
@@ -25,23 +37,66 @@ export const useAuthStore = defineStore('auth', () => {
     return (first + last).toUpperCase()
   })
 
-  // ── Actions ────────────────────────────────────────────
+  // ── Actions ──────────────────────────────────────────────────
   async function login({ username, password, rememberMe }) {
+    // authService.login ya retorna response.data gracias al { data } de axios
     const response = await authService.login(username, password)
 
-    token.value = response.token
+    // Guarda en estado reactivo
+    token.value     = response.token
     expiresAt.value = response.expiresAt
-    user.value  = response.user
+    user.value      = response.user
 
+    // Persiste en storage
     const storage = rememberMe ? localStorage : sessionStorage
-    storage.setItem('auth_token', response.token)
+    storage.setItem('auth_token',   response.token)
     storage.setItem('auth_expires', response.expiresAt)
-    // Guarda el user para no perderlo al recargar la página
     storage.setItem('auth_user',    JSON.stringify(response.user))
+
+    // Log para confirmar que llegó bien
+    console.log('[auth] login OK → user:', response.user)
   }
 
   async function logout() {
-    try { await authService.logout() } catch { /* silent si no existe el endpoint */ }
+    try { await authService.logout() } catch { /* silent */ }
+    _clearState()
+  }
+
+  // fetchMe — se llama desde el router guard al cargar cada página
+  // NO llama al backend porque /auth/me puede no existir
+  // Confía en el storage + expiresAt de la API
+  function fetchMe() {
+    // Sin token → no hay sesión
+    if (!token.value) return
+
+    // Token expirado → limpia
+    if (expiresAt.value && new Date() >= new Date(expiresAt.value)) {
+      console.log('[auth] token expirado → logout')
+      _clearState()
+      return
+    }
+
+    // Si user ya está en memoria (mismo tab) → nada que hacer
+    if (user.value) return
+
+    // Si no hay user en memoria, intenta recuperarlo desde storage
+    const raw = fromStorage('auth_user')
+    if (raw) {
+      try {
+        user.value = JSON.parse(raw)
+        console.log('[auth] user recuperado de storage:', user.value)
+      } catch {
+        console.warn('[auth] auth_user en storage está corrupto → logout')
+        _clearState()
+      }
+    } else {
+      // Token existe pero no hay user → estado inconsistente → limpia
+      console.warn('[auth] token sin user en storage → logout')
+      _clearState()
+    }
+  }
+
+  function _clearState() {
     user.value      = null
     token.value     = null
     expiresAt.value = null
@@ -53,43 +108,9 @@ export const useAuthStore = defineStore('auth', () => {
     sessionStorage.removeItem('auth_user')
   }
 
-  // Valida el token almacenado al cargar la app
-  async function fetchMe() {
-    if (!token.value) { initialized.value = true; return }
-
-    // Si el token ya expiró, limpia y sal
-    if (expiresAt.value && new Date() > new Date(expiresAt.value)) {
-      await logout()
-      initialized.value = true
-      return
-    }
-
-    // Intenta recuperar el user desde storage para evitar una llamada al backend
-    const storedUser =
-      localStorage.getItem('auth_user') ??
-      sessionStorage.getItem('auth_user')
-
-    if (storedUser) {
-      try {
-        user.value = JSON.parse(storedUser)
-        initialized.value = true
-        return
-      } catch { /* si el JSON está corrupto, cae al fetchMe real */ }
-    }
-
-    // Si no hay user en storage, consulta /auth/me al backend
-    try {
-      user.value = await authService.me()
-    } catch {
-      await logout()
-    } finally {
-      initialized.value = true
-    }
-  }
-
   return {
-    user, token, expiresAt, initialized,
-    isAuthenticated, userInitials,
+    user, token, expiresAt,
+    isAuthenticated, userInitials, msUntilExpiry,
     login, logout, fetchMe,
   }
 })
