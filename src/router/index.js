@@ -6,6 +6,8 @@ import { useAuthStore } from '@/modules/auth/store.js'
 import { authRoutes }    from '@/modules/auth/router.js'
 import { mainRoutes } from '@/modules/main/router.js'
 import { networkRoutes } from '@/modules/network/router.js'
+import { inventoryRoutes } from '@/modules/inventory/router.js'
+import { backupsRoutes } from '@/modules/backups/router.js'
 
 // ── Importar el Dashboard layout ──────────────────────────────
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
@@ -25,6 +27,8 @@ const routes = [
     children: [
       ...mainRoutes,
       ...networkRoutes,
+      ...inventoryRoutes,
+      ...backupsRoutes,
       // ...serversRoutes,   ← cada módulo nuevo se agrega aquí
     ],
   },
