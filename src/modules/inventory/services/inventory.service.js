@@ -1,8 +1,8 @@
 // src/modules/inventory/services/inventory.service.js
 import http from '@/services/http.js'
 
-const BASE = '/monitoring/netbox-regions'
-
+const BASEREGIONS = '/monitoring/netbox-regions'
+const BASEIPADDRESSES = '/monitoring/netbox-ip-addresses'
 /**
  * CRUD de regiones de NetBox.
  *
@@ -14,30 +14,67 @@ const BASE = '/monitoring/netbox-regions'
  */
 export const inventoryService = {
   async getRegions() {
-    const { data } = await http.get(BASE)
+    const { data } = await http.get(BASEREGIONS)
     return data
   },
 
   async getRegion(id) {
-    const { data } = await http.get(`${BASE}/${id}`)
+    const { data } = await http.get(`${BASEREGIONS}/${id}`)
     return data
   },
 
   async createRegion(payload) {
     // payload = { name, slug, description }
-    const { data } = await http.post(BASE, payload)
+    const { data } = await http.post(BASEREGIONS, payload)
     return data
   },
 
   async updateRegion(id, payload) {
     // payload = { name, slug, description }
-    const { data } = await http.patch(`${BASE}/${id}`, payload)
+    const { data } = await http.patch(`${BASEREGIONS}/${id}`, payload)
     return data
   },
 
   async deleteRegion(id) {
-    await http.delete(`${BASE}/${id}`)
+    await http.delete(`${BASEREGIONS}/${id}`)
   },
+
+  /**
+   * Direcciones IP de NetBox (solo lectura).
+   * GET /monitoring/netbox-ip-addresses
+   * → [{ id, address, status: { value, label }, dnsName, description }]
+   */
+  async getIpAddresses() {
+    const { data } = await http.get(BASEIPADDRESSES)
+    return data
+  },
+}
+
+/**
+ * Extrae el prefijo/subred a partir de una dirección CIDR.
+ * "172.16.20.1/24" → "172.16.20.0/24"
+ * "100.124.54.117/32" → "100.124.54.117/32"
+ * Si no se puede parsear, devuelve un grupo "Otros".
+ */
+export function subnetOf(address) {
+  if (!address || typeof address !== 'string') return 'Otros'
+  const [ip, maskStr] = address.split('/')
+  const mask = Number(maskStr)
+  const octets = ip.split('.').map(Number)
+  if (octets.length !== 4 || octets.some(o => Number.isNaN(o)) || Number.isNaN(mask)) {
+    return 'Otros'
+  }
+  // Calcula la dirección de red aplicando la máscara
+  const ipInt = ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0
+  const maskInt = mask === 0 ? 0 : (0xffffffff << (32 - mask)) >>> 0
+  const netInt = (ipInt & maskInt) >>> 0
+  const netOctets = [
+    (netInt >>> 24) & 255,
+    (netInt >>> 16) & 255,
+    (netInt >>> 8) & 255,
+    netInt & 255,
+  ]
+  return `${netOctets.join('.')}/${mask}`
 }
 
 /**

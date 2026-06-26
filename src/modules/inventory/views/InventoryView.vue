@@ -5,10 +5,13 @@
     <div class="inventory__head">
       <div>
         <h1 class="inventory__title">Inventario y documentación</h1>
-        <p class="inventory__sub">Regiones registradas en NetBox</p>
+        <p class="inventory__sub">
+          {{ activeTab === 'regions' ? 'Regiones registradas en NetBox' : 'Direcciones IP registradas en NetBox' }}
+        </p>
       </div>
       <div class="inventory__head-actions">
         <button
+          v-if="activeTab === 'regions'"
           class="inventory__refresh"
           :class="{ 'inventory__refresh--loading': loading }"
           :disabled="loading"
@@ -23,7 +26,11 @@
           </svg>
           Actualizar
         </button>
-        <button class="inventory__add" @click="openCreate">
+        <button
+          v-if="activeTab === 'regions'"
+          class="inventory__add"
+          @click="openCreate"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2.5"
             stroke-linecap="round" stroke-linejoin="round">
@@ -35,6 +42,40 @@
       </div>
     </div>
 
+    <!-- Tabs -->
+    <div class="inventory__tabs">
+      <button
+        class="inv-tab"
+        :class="{ 'inv-tab--active': activeTab === 'regions' }"
+        @click="activeTab = 'regions'"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+        </svg>
+        Regiones
+      </button>
+      <button
+        class="inv-tab"
+        :class="{ 'inv-tab--active': activeTab === 'ips' }"
+        @click="activeTab = 'ips'"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/>
+          <line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/>
+        </svg>
+        Direcciones IP
+      </button>
+    </div>
+
+    <!-- ─────────── Pestaña: Direcciones IP ─────────── -->
+    <IpAddressesPanel v-if="activeTab === 'ips'" />
+
+    <!-- ─────────── Pestaña: Regiones ─────────── -->
+    <template v-else>
     <!-- Stats -->
     <div class="inventory__stats">
       <div class="stat-chip">
@@ -228,15 +269,20 @@
       @cancel="cancelDelete"
       @confirm="deleteRegion"
     />
+    </template>
 
   </div>
 </template>
 
 <script setup>
-import { onMounted, h } from 'vue'
+import { onMounted, ref, h } from 'vue'
 import { useInventory } from '@/modules/inventory/composables/useInventory.js'
 import RegionFormModal   from '@/modules/inventory/components/RegionFormModal.vue'
 import DeleteConfirmModal from '@/modules/inventory/components/DeleteConfirmModal.vue'
+import IpAddressesPanel  from '@/modules/inventory/components/IpAddressesPanel.vue'
+
+// Pestaña activa: 'regions' | 'ips'
+const activeTab = ref('regions')
 
 // Ícono de orden inline
 const SortIcon = {
@@ -275,7 +321,7 @@ onMounted(fetchRegions)
 </script>
 
 <style scoped>
-.inventory { max-width: 1100px; }
+.inventory { max-width: 1700px; }
 
 .inventory__head {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -307,6 +353,23 @@ onMounted(fetchRegions)
 
 .spin { animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Tabs */
+.inventory__tabs {
+  display: flex; gap: 4px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.inv-tab {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 16px; margin-bottom: -1px;
+  background: none; border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-3); cursor: pointer;
+  font-family: var(--font-sans); font-size: .82rem; font-weight: 600;
+  transition: color .12s, border-color .12s;
+}
+.inv-tab:hover { color: var(--text-1); }
+.inv-tab--active { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* Stats */
 .inventory__stats { display: flex; gap: 12px; margin-bottom: 16px; }

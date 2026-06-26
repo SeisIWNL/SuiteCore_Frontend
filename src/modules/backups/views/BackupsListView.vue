@@ -216,7 +216,7 @@ onMounted(fetchDevices)
 </script>
 
 <style scoped>
-.backups { max-width: 1200px; }
+.backups { max-width: 1800px; }
 
 /* Header */
 .backups__head {

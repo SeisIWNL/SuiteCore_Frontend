@@ -228,7 +228,7 @@ onMounted(fetchBackup)
 </script>
 
 <style scoped>
-.detail { max-width: 1200px; }
+.detail { max-width: 1800px; }
 
 /* Back */
 .detail__back {
