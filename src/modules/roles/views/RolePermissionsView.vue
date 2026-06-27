@@ -113,12 +113,23 @@
             v-for="menu in block.menus"
             :key="menu.id"
             class="pmenu__item"
-            :class="{ 'pmenu__item--on': checked[menu.id] }"
+            :class="{
+              'pmenu__item--on':     checked[menu.id],
+              'pmenu__item--locked': isLocked(menu.id),
+            }"
             @click="toggle(menu.id)"
           >
             <span class="pmenu__label">{{ menu.name }}</span>
+            <span v-if="isLocked(menu.id)" class="pmenu__lock" title="Siempre visible para todos los roles">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </span>
             <code class="pmenu__slug">{{ menu.slug }}</code>
-            <span class="pcheck" :class="{ 'pcheck--all': checked[menu.id] }">
+            <span class="pcheck" :class="{ 'pcheck--all': checked[menu.id], 'pcheck--locked': isLocked(menu.id) }">
               <svg v-if="checked[menu.id]" width="11" height="11" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12"/>
@@ -186,7 +197,7 @@ const {
   error, loading, saving, saved,
   hasChanges, totalSelected, totalMenus, hasData,
   fetchPermissions, save,
-  toggle, toggleBlock, blockState, resetChanges,
+  toggle, toggleBlock, blockState, resetChanges, isLocked,
 } = useRolePermissions(props.gidNumber)
 
 // El nombre del rol llega por query (desde la lista) o cae al gid
@@ -343,6 +354,9 @@ onMounted(fetchPermissions)
   transition: background .1s;
 }
 .pmenu__item:hover { background: var(--bg-2); }
+.pmenu__item--locked { cursor: default; opacity: .9; }
+.pmenu__item--locked:hover { background: transparent; }
+.pmenu__lock { color: var(--text-3); display: inline-flex; margin-left: 7px; }
 .pmenu__label {
   font-size: .82rem; color: var(--text-2); flex-shrink: 0;
 }
@@ -364,6 +378,7 @@ onMounted(fetchPermissions)
   background: var(--accent); border-color: var(--accent);
 }
 .pcheck--some { background: var(--accent-muted); border-color: var(--accent); }
+.pcheck--locked { background: var(--text-3); border-color: var(--text-3); opacity: .6; }
 .pcheck__dash { width: 8px; height: 2px; background: var(--accent); border-radius: 1px; }
 
 /* Footer */

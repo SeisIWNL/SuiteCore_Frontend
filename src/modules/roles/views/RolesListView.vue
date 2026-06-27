@@ -268,7 +268,7 @@ onMounted(fetchRoles)
 </script>
 
 <style scoped>
-.roles { max-width: 1100px; }
+.roles { max-width: 2000px; }
 
 /* Header */
 .roles__head {

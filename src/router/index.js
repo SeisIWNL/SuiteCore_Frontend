@@ -45,6 +45,8 @@ export const router = createRouter({
 })
 
 // ── Navigation guard global ───────────────────────────────────
+import { usePermissionsStore } from '@/stores/permissions.js'
+
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
@@ -60,5 +62,20 @@ router.beforeEach(async (to) => {
     // Evita redirigir si ya estamos yendo al dashboard
     if (to.name === 'dashboard') return
     return { name: 'dashboard' }
+  }
+
+  // ── Control de acceso por módulo (RBAC) ─────────────────────
+  if (to.meta.requiresAuth && auth.isAuthenticated) {
+    // Garantiza que los permisos del usuario estén cargados (p. ej. tras F5)
+    await auth.ensurePermissions()
+
+    const perms = usePermissionsStore()
+    // El path base del módulo (ej. '/backups/x/history' → '/backups')
+    const baseSlug = '/' + (to.path.split('/').filter(Boolean)[0] ?? '')
+
+    // El dashboard siempre permitido; si no tiene acceso → redirige
+    if (baseSlug !== '/dashboard' && !perms.canAccess(baseSlug)) {
+      return { name: 'dashboard', query: { denied: baseSlug } }
+    }
   }
 })

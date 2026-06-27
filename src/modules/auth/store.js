@@ -1,6 +1,25 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authService } from '@/modules/auth/services/auth.service.js'
+import { usePermissionsStore } from '@/stores/permissions.js'
+
+// Resuelve el gidNumber del usuario desde las distintas formas en que
+// puede venir del backend (gidNumber directo, o anidado).
+function resolveGid(user) {
+  if (!user) return null
+  const gid =
+    user.gidNumber ??
+    user.gid ??
+    user.groupId ??
+    user.role ??
+    // a veces viene anidado en el primer grupo
+    user.groups?.[0]?.gidNumber ??
+    user.groups?.[0]?.id ??
+    null
+  // Normaliza: descarta cadenas vacías
+  if (gid === '' || gid == null) return null
+  return String(gid)
+}
 
 export const useAuthStore = defineStore('auth', () => {
 
@@ -12,11 +31,11 @@ export const useAuthStore = defineStore('auth', () => {
   // ── State — se inicializa desde storage al arrancar ──────────
   const token     = ref(fromStorage('auth_token'))
   const expiresAt = ref(fromStorage('auth_expires'))
-  const user      = ref(() => {
+  const user      = ref((() => {
     const raw = fromStorage('auth_user')
     if (!raw) return null
     try { return JSON.parse(raw) } catch { return null }
-  })
+  })())
 
   // ── Getters ──────────────────────────────────────────────────
   const isAuthenticated = computed(() => {
@@ -55,10 +74,26 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Log para confirmar que llegó bien
     console.log('[auth] login OK → user:', response.user)
+
+    // Carga los módulos permitidos para el rol del usuario
+    try {
+      const perms = usePermissionsStore()
+      const gid = resolveGid(response.user)
+      console.log('[auth] gidNumber resuelto:', gid, '← de user:', response.user)
+      if (!gid) {
+        console.warn('[auth] ⚠ El usuario NO tiene gidNumber directo; intentando resolver por username...')
+      }
+      // ensurePermissions aplica el fallback por username si hace falta
+      await ensurePermissions(true)
+      console.log('[auth] permisos cargados → slugs permitidos:', perms.allowedSlugs)
+    } catch (err) {
+      console.warn('[auth] no se pudieron cargar permisos:', err)
+    }
   }
 
   async function logout() {
     try { await authService.logout() } catch { /* silent */ }
+    try { usePermissionsStore().clear() } catch { /* silent */ }
     _clearState()
   }
 
@@ -96,6 +131,39 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // ensurePermissions — garantiza que los módulos permitidos del usuario
+  // estén cargados (p. ej. tras un F5). Idempotente: no recarga si ya están.
+  async function ensurePermissions(force = false) {
+    if (!user.value) return
+    const perms = usePermissionsStore()
+    let gid = resolveGid(user.value)
+
+    // Fallback: si el usuario no trae gidNumber, lo descubrimos cruzando
+    // su username contra GET /Permission/Roles (que incluye users[]).
+    if (!gid) {
+      gid = await resolveGidByUsername(user.value.username)
+      if (gid) console.log('[auth] gidNumber resuelto por username:', gid)
+    }
+
+    await perms.loadForGid(gid, force)
+  }
+
+  // Busca el gidNumber del usuario en la lista de roles, por username.
+  async function resolveGidByUsername(username) {
+    if (!username) return null
+    try {
+      const { permissionService } = await import('@/modules/roles/services/permission.service.js')
+      const data = await permissionService.getRoles()
+      for (const role of data.roles ?? []) {
+        const match = (role.users ?? []).some(u => u.username === username)
+        if (match) return String(role.id)   // role.id === gidNumber
+      }
+    } catch (err) {
+      console.warn('[auth] no se pudo resolver gid por username:', err)
+    }
+    return null
+  }
+
   function _clearState() {
     user.value      = null
     token.value     = null
@@ -111,6 +179,6 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user, token, expiresAt,
     isAuthenticated, userInitials, msUntilExpiry,
-    login, logout, fetchMe,
+    login, logout, fetchMe, ensurePermissions,
   }
 })

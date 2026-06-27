@@ -43,7 +43,7 @@
       </RouterLink>
 
       <!-- Grupos colapsables -->
-      <template v-for="group in navGroups" :key="group.id">
+      <template v-for="group in filteredGroups" :key="group.id">
 
         <!-- Divider cuando está colapsado -->
         <div v-if="!mainStore.sidebarOpen" class="sidebar__group-divider" />
@@ -135,9 +135,11 @@ import { computed, reactive } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store.js'
 import { useMainStore } from '@/modules/main/store.js'
+import { usePermissionsStore } from '@/stores/permissions.js'
 
 const authStore = useAuthStore()
 const mainStore = useMainStore()
+const permsStore = usePermissionsStore()
 const route     = useRoute()
 const router    = useRouter()
 
@@ -156,7 +158,7 @@ const openGroups = reactive({
   red:            true,
   seguridad:      false,
   inventario:     false,
-  configuracion:  false,
+  usuarios:       false,
 })
 
 function toggleGroup(id) {
@@ -288,6 +290,23 @@ const navGroups = [
     ],
   },
 ]
+
+// ── Filtrado por permisos del rol ─────────────────────────────
+// Oculta items cuyo slug el rol no puede ver, y oculta grupos que
+// queden sin items. Si los permisos aún no se cargaron (set null),
+// se muestran todos (fail-open en arranque, el guard protege el acceso).
+const filteredGroups = computed(() => {
+  const slugs = permsStore.allowedSlugs
+  // Sin permisos cargados todavía → no filtrar
+  if (slugs === null) return navGroups
+
+  return navGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => permsStore.canAccess(item.to)),
+    }))
+    .filter(group => group.items.length > 0)
+})
 
 function isActive(to) {
   return route.path === to
