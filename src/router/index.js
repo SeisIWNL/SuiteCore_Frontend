@@ -8,6 +8,7 @@ import { mainRoutes } from '@/modules/main/router.js'
 import { networkRoutes } from '@/modules/network/router.js'
 import { inventoryRoutes } from '@/modules/inventory/router.js'
 import { backupsRoutes } from '@/modules/backups/router.js'
+import { rolesRoutes } from '@/modules/roles/router.js'
 
 // ── Importar el Dashboard layout ──────────────────────────────
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
@@ -29,6 +30,7 @@ const routes = [
       ...networkRoutes,
       ...inventoryRoutes,
       ...backupsRoutes,
+      ...rolesRoutes,
       // ...serversRoutes,   ← cada módulo nuevo se agrega aquí
     ],
   },

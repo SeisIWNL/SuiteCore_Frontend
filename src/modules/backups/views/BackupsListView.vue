@@ -90,6 +90,7 @@
               <th class="table__th">Modelo / Grupo</th>
               <th class="table__th">Último respaldo</th>
               <th class="table__th table__th--center">Estado</th>
+              <th class="table__th table__th--center">Historial</th>
             </tr>
           </thead>
           <tbody>
@@ -151,13 +152,24 @@
                     {{ device.status === 'success' ? 'Success' : 'Failed' }}
                   </span>
                 </td>
+                <td class="table__td table__td--center" @click.stop>
+                  <button class="hist-btn" @click="openHistory(device.name)" title="Ver historial de versiones">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    Historial
+                  </button>
+                </td>
               </tr>
             </template>
 
             <!-- Sin resultados -->
             <template v-else-if="hasData && !hasResults">
               <tr>
-                <td colspan="5" class="table__no-results">
+                <td colspan="6" class="table__no-results">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="1.5"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -172,7 +184,7 @@
             <!-- Sin datos -->
             <template v-else>
               <tr>
-                <td colspan="5" class="table__no-results">
+                <td colspan="6" class="table__no-results">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="1.5"
                     stroke-linecap="round" stroke-linejoin="round">
@@ -186,14 +198,22 @@
         </table>
       </div>
     </div>
+
+    <!-- Modal de historial de versiones -->
+    <VersionHistoryModal
+      :open="historyOpen"
+      :device-name="historyDevice"
+      @close="closeHistory"
+    />
   </div>
 </template>
 
 <script setup>
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBackups }    from '@/modules/backups/composables/useBackups.js'
 import { useDateFormat } from '@/modules/backups/composables/useDateFormat.js'
+import VersionHistoryModal from '@/modules/backups/components/VersionHistoryModal.vue'
 
 const router = useRouter()
 const { formatDateTime, formatRelative } = useDateFormat()
@@ -208,6 +228,18 @@ const {
 // Para formatRelative del lastSync necesitamos el string ISO
 const lastSyncStr = computed(() => lastSync.value?.toISOString() ?? null)
 
+// ── Modal de historial ──────────────────────────────────────
+const historyOpen   = ref(false)
+const historyDevice = ref('')
+
+function openHistory(deviceName) {
+  historyDevice.value = deviceName
+  historyOpen.value   = true
+}
+function closeHistory() {
+  historyOpen.value = false
+}
+
 function goToDetail(deviceName) {
   router.push({ name: 'backup-detail', params: { deviceName } })
 }
@@ -216,7 +248,7 @@ onMounted(fetchDevices)
 </script>
 
 <style scoped>
-.backups { max-width: 1800px; }
+.backups { max-width: 1200px; }
 
 /* Header */
 .backups__head {
@@ -383,4 +415,19 @@ onMounted(fetchDevices)
 @media (max-width: 640px) {
   .backups__head { flex-direction: column; gap: 12px; }
 }
+/* Historial button */
+.hist-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-2);
+  font-family: var(--font-sans); font-size: .72rem; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.hist-btn:hover {
+  background: var(--accent-muted); border-color: var(--accent);
+  color: var(--accent);
+}
+
 </style>
