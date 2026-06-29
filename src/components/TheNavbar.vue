@@ -93,10 +93,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store.js'
 import { useMainStore } from '@/modules/main/store.js'
+import { useLoaderStore } from '@/stores/loader.js'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 
 const authStore = useAuthStore()
 const mainStore = useMainStore()
+const loader    = useLoaderStore()
 const route     = useRoute()
 const router    = useRouter()
 
@@ -132,8 +134,19 @@ onUnmounted(() => document.removeEventListener('click', handleOutsideClick))
 
 async function handleLogout() {
   menuOpen.value = false
-  await authStore.logout()
-  router.push({ name: 'login' })
+  loader.show('Cerrando sesión...')
+  try {
+    // Garantiza que el loader sea visible al menos un instante,
+    // aunque el logout responda de inmediato (evita parpadeo).
+    await Promise.all([
+      authStore.logout(),
+      new Promise(resolve => setTimeout(resolve, 600)),
+    ])
+    // replace para que el dashboard no quede en el historial del navegador
+    await router.replace({ name: 'login' })
+  } finally {
+    loader.hide()
+  }
 }
 </script>
 
