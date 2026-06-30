@@ -5,7 +5,7 @@
     <div class="roles__head">
       <div>
         <div class="roles__eyebrow">RBAC · DIRECTORIO LDAP</div>
-        <h1 class="roles__title">Gestión de roles</h1>
+        <h1 class="roles__title">Gestión de usuarios y roles</h1>
         <p class="roles__sub">
           Configura los módulos del dashboard que cada rol del directorio puede visualizar.
         </p>
@@ -216,14 +216,64 @@
               Usuarios con este rol
               <span class="rcard__panel-count">{{ role.users?.length ?? 0 }}</span>
             </div>
+
+            <!-- Botón agregar usuario -->
+            <button class="add-user-btn" @click="actions.openCreate(role)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/>
+                <line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/>
+              </svg>
+              Agregar usuario
+            </button>
+
             <ul class="ulist">
-              <li v-for="u in role.users" :key="u.username" class="uitem">
+              <li
+                v-for="u in role.users"
+                :key="u.username"
+                class="uitem"
+                :class="{ 'uitem--disabled': u.isActive === false }"
+              >
                 <span class="uitem__avatar">{{ initials(u) }}</span>
                 <div class="uitem__info">
                   <span class="uitem__name">{{ fullName(u) }}</span>
                   <code class="uitem__user">{{ u.username }}</code>
+                  <span v-if="u.isActive === false" class="uitem__badge">Desactivado</span>
                 </div>
-                <span v-if="u.department" class="uitem__dept">{{ u.department }}</span>
+
+                <!-- Acciones: activo → editar + deshabilitar -->
+                <div v-if="u.isActive !== false" class="uitem__actions">
+                  <button class="uitem__btn" title="Editar usuario"
+                    @click="actions.openEdit(u, role)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                  <button class="uitem__btn uitem__btn--warn" title="Deshabilitar usuario"
+                    @click="actions.openDisable(u, role)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M18.36 6.64A9 9 0 1 1 5.64 6.64"/><line x1="12" y1="2" x2="12" y2="12"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Acciones: deshabilitado → reactivar -->
+                <div v-else class="uitem__actions">
+                  <button class="uitem__btn uitem__btn--ok" title="Reactivar usuario"
+                    @click="actions.openEnable(u, role)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                  </button>
+                </div>
               </li>
             </ul>
           </div>
@@ -231,22 +281,48 @@
       </div>
     </div>
 
+    <!-- Modal crear/editar usuario -->
+    <UserFormModal
+      :modal="actions.formModal"
+      :roles="roles"
+      :saving="actions.saving.value"
+      :error="actions.error.value"
+      @close="actions.closeForm"
+      @save="actions.submitForm"
+    />
+
+    <!-- Modal confirmación deshabilitar/reactivar -->
+    <UserConfirmModal
+      :modal="actions.confirmModal"
+      :saving="actions.saving.value"
+      :error="actions.error.value"
+      @cancel="actions.closeConfirm"
+      @confirm="actions.confirmAction"
+    />
+
   </div>
 </template>
 
 <script setup>
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRoles, roleVisual } from '@/modules/roles/composables/useRoles.js'
+import { useRoles, roleVisual } from '@/modules/users/composables/useRoles.js'
+import { useUserActions } from '@/modules/users/composables/useUserActions.js'
+import UserFormModal from '@/modules/users/components/UserFormModal.vue'
+import UserConfirmModal from '@/modules/users/components/UserConfirmModal.vue'
 
 const router = useRouter()
 
 const {
+  roles,
   searchQuery, filteredRoles,
   totalRoles, totalAssignments, uniqueUsers,
   loading, error, hasData, hasResults,
   fetchRoles, toggleExpand, isExpanded, clearSearch,
 } = useRoles()
+
+// Acciones CRUD de usuarios; tras cada acción recarga la lista de roles
+const actions = useUserActions(fetchRoles, () => roles.value)
 
 function fullName(u) {
   return [u.firstName, u.lastName].filter(Boolean).join(' ') || u.username
@@ -258,7 +334,7 @@ function initials(u) {
 }
 function editRole(role) {
   router.push({
-    name: 'role-permissions',
+    name: 'users-permissions',
     params: { gidNumber: role.id },
     query: { name: role.name },
   })
@@ -473,26 +549,64 @@ onMounted(fetchRoles)
 }
 .ulist {
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px;
 }
 .uitem {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 10px;
   background: var(--bg-1); border: 1px solid var(--border);
   border-radius: var(--radius);
+  transition: opacity .12s;
 }
+/* Usuario deshabilitado: en gris */
+.uitem--disabled { opacity: .55; background: var(--bg-2); }
+.uitem--disabled .uitem__avatar { background: var(--bg-3); color: var(--text-3); }
+.uitem--disabled .uitem__name { color: var(--text-3); }
+
 .uitem__avatar {
   width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: var(--accent-muted); color: var(--accent);
   font-size: .68rem; font-weight: 700;
 }
-.uitem__info { min-width: 0; display: flex; flex-direction: column; }
+.uitem__info { min-width: 0; display: flex; flex-direction: column; flex: 1; }
 .uitem__name {
   font-size: .8rem; font-weight: 600; color: var(--text-1);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .uitem__user { font-family: var(--font-mono); font-size: .68rem; color: var(--text-3); }
+.uitem__badge {
+  display: inline-block; margin-top: 3px; width: fit-content;
+  font-size: .58rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 1px 6px; border-radius: 4px;
+  background: var(--bg-3); color: var(--text-3);
+}
+
+/* Acciones por usuario */
+.uitem__actions { display: flex; gap: 4px; flex-shrink: 0; margin-left: auto; }
+.uitem__btn {
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-2);
+  cursor: pointer; transition: background .12s, color .12s, border-color .12s;
+}
+.uitem__btn:hover { background: var(--bg-hover); color: var(--text-1); }
+.uitem__btn--warn:hover { background: var(--warning-muted); color: var(--warning); border-color: var(--warning); }
+.uitem__btn--ok:hover   { background: var(--success-muted); color: var(--success); border-color: var(--success); }
+
+/* Botón agregar usuario */
+.add-user-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-bottom: 12px; padding: 7px 14px;
+  background: var(--accent-muted); border: 1px solid var(--accent);
+  border-radius: var(--radius); color: var(--accent);
+  font-family: var(--font-sans); font-size: .76rem; font-weight: 600;
+  cursor: pointer; transition: background .12s;
+}
+.add-user-btn:hover { background: var(--accent); color: #fff; }
+
 .uitem__dept {
   margin-left: auto; font-size: .66rem; color: var(--text-3);
   background: var(--bg-3); padding: 2px 7px; border-radius: 4px; white-space: nowrap;

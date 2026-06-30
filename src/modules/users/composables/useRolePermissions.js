@@ -1,6 +1,6 @@
 // src/modules/roles/composables/useRolePermissions.js
 import { ref, reactive, computed } from 'vue'
-import { permissionService } from '@/modules/roles/services/permission.service.js'
+import { permissionService } from '@/modules/users/services/permission.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
 
 export function useRolePermissions(gidNumber) {

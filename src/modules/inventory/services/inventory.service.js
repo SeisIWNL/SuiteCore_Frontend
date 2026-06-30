@@ -1,16 +1,16 @@
 // src/modules/inventory/services/inventory.service.js
 import http from '@/services/http.js'
 
-const BASEREGIONS = '/monitoring/netbox-regions'
-const BASEIPADDRESSES = '/monitoring/netbox-ip-addresses'
+const BASEREGIONS = '/netbox/regions'
+const BASEIPADDRESSES = '/netbox/ip-addresses'
 /**
  * CRUD de regiones de NetBox.
  *
- * GET    /monitoring/netbox-regions       → lista todas
- * GET    /monitoring/netbox-regions/:id   → una región
- * POST   /monitoring/netbox-regions       → crea  { name, slug, description }
- * PATCH  /monitoring/netbox-regions/:id   → edita { name, slug, description }
- * DELETE /monitoring/netbox-regions/:id   → elimina
+ * GET    /netbox/regions       → lista todas
+ * GET    /netbox/regions/:id   → una región
+ * POST   /netbox/regions       → crea  { name, slug, description }
+ * PATCH  /netbox/regions/:id   → edita { name, slug, description }
+ * DELETE /netbox/regions/:id   → elimina
  */
 export const inventoryService = {
   async getRegions() {
@@ -41,7 +41,7 @@ export const inventoryService = {
 
   /**
    * Direcciones IP de NetBox (solo lectura).
-   * GET /monitoring/netbox-ip-addresses
+   * GET /netbox/ip-addresses
    * → [{ id, address, status: { value, label }, dnsName, description }]
    */
   async getIpAddresses() {

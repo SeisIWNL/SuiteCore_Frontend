@@ -152,7 +152,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function resolveGidByUsername(username) {
     if (!username) return null
     try {
-      const { permissionService } = await import('@/modules/roles/services/permission.service.js')
+      const { permissionService } = await import('@/modules/users/services/permission.service.js')
       const data = await permissionService.getRoles()
       for (const role of data.roles ?? []) {
         const match = (role.users ?? []).some(u => u.username === username)

@@ -1,7 +1,7 @@
 // src/stores/permissions.js
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { permissionService } from '@/modules/roles/services/permission.service.js'
+import { permissionService } from '@/modules/users/services/permission.service.js'
 
 const SLUGS_KEY = 'perm_slugs'
 const GID_KEY   = 'perm_gid'

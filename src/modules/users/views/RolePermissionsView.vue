@@ -184,7 +184,7 @@
 <script setup>
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRolePermissions, blockVisual } from '@/modules/roles/composables/useRolePermissions.js'
+import { useRolePermissions, blockVisual } from '@/modules/users/composables/useRolePermissions.js'
 
 const props = defineProps({
   gidNumber: { type: String, required: true },
@@ -206,7 +206,7 @@ const roleLabel = computed(() =>
 )
 
 function goBack() {
-  router.push({ name: 'roles' })
+  router.push({ name: 'users' })
 }
 
 // Íconos por bloque

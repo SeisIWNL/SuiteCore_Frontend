@@ -21,12 +21,27 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Parsea el mensaje de error del backend (.NET ProblemDetails)
-    const msg =
-      error.response?.data?.title ??
-      error.response?.data?.message ??
-      error.message ??
-      'Error desconocido'
+    const data = error.response?.data
+
+    // 1) Errores de validación de .NET: { errors: { Campo: ["msg"] } }
+    let msg = ''
+    if (data?.errors && typeof data.errors === 'object') {
+      const parts = Object.values(data.errors).flat().filter(Boolean)
+      if (parts.length) msg = parts.join(' ')
+    }
+
+    // 2) Mensaje estándar (ProblemDetails u otros), descartando vacíos
+    if (!msg) {
+      const candidates = [data?.message, data?.title, data?.detail, error.message]
+      msg = candidates.find((c) => typeof c === 'string' && c.trim()) ?? ''
+    }
+
+    // 3) Último recurso: status HTTP, o genérico de conexión
+    if (!msg) {
+      msg = error.response?.status
+        ? `Error ${error.response.status} del servidor.`
+        : 'No se pudo conectar con el servidor.'
+    }
 
     // Si el token expiró, limpia la sesión
     if (error.response?.status === 401) {
@@ -34,7 +49,11 @@ http.interceptors.response.use(
       sessionStorage.removeItem('auth_token')
     }
 
-    return Promise.reject(new Error(msg))
+    // Propaga un Error con mensaje legible, conservando el detalle original
+    const wrapped = new Error(msg)
+    wrapped.status = error.response?.status
+    wrapped.data = data
+    return Promise.reject(wrapped)
   },
 )
 

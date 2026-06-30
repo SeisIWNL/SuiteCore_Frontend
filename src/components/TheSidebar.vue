@@ -133,23 +133,14 @@
 <script setup>
 import { computed, reactive } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/modules/auth/store.js'
 import { useMainStore } from '@/modules/main/store.js'
 import { usePermissionsStore } from '@/stores/permissions.js'
 
-const authStore = useAuthStore()
 const mainStore = useMainStore()
 const permsStore = usePermissionsStore()
 const route     = useRoute()
 const router    = useRouter()
 
-const user         = computed(() => authStore.user)
-const userInitials = computed(() => authStore.userInitials || 'US')
-const fullName     = computed(() => {
-  const u = authStore.user
-  if (!u) return ''
-  return [u.firstName, u.lastName].filter(Boolean).join(' ') || u.username
-})
 
 // ── Estado de grupos abiertos/cerrados ────────────────────────
 // true = abierto por defecto
@@ -272,13 +263,6 @@ const navGroups = [
         roles: ['admin'],
         icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
       },
-      {
-        to: '/roles',
-        label: 'Gestión de roles',
-        badge: null,
-        roles: ['admin'],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-2-2"/></svg>`,
-      },
     ],
   },
 ]
@@ -304,10 +288,7 @@ function isActive(to) {
   return route.path === to
 }
 
-async function handleLogout() {
-  await authStore.logout()
-  router.push({ name: 'login' })
-}
+
 </script>
 
 <style scoped>
@@ -463,35 +444,6 @@ async function handleLogout() {
 }
 .sidebar__item-badge--warning { background: rgba(251,191,36,.2); color: #fbbf24; }
 .sidebar__item-badge--danger  { background: rgba(248,113,113,.2); color: #f87171; }
-
-/* ── Footer ── */
-.sidebar__footer {
-  border-top: 1px solid var(--sidebar-border);
-  padding: 10px; display: flex; align-items: center;
-  gap: 8px; flex-shrink: 0; overflow: hidden;
-}
-.sidebar__user { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
-.sidebar__user-avatar {
-  width: 28px; height: 28px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #7c3aed);
-  display: flex; align-items: center; justify-content: center;
-  font-size: .65rem; font-weight: 700; color: #fff; flex-shrink: 0;
-}
-.sidebar__user-info { overflow: hidden; display: flex; flex-direction: column; gap: 1px; }
-.sidebar__user-name {
-  font-size: .75rem; font-weight: 600; color: rgba(255,255,255,.9);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sidebar__user-role {
-  font-size: .65rem; color: var(--sidebar-text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sidebar__logout {
-  flex-shrink: 0; background: none; border: none;
-  color: var(--sidebar-text); cursor: pointer; padding: 4px;
-  border-radius: var(--radius-sm); transition: color .12s, background .12s;
-}
-.sidebar__logout:hover { color: #f87171; background: rgba(248,113,113,.15); }
 
 /* ── Toggle ── */
 .sidebar__toggle {

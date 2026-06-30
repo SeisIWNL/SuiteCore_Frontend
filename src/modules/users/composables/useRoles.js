@@ -1,6 +1,6 @@
 // src/modules/roles/composables/useRoles.js
 import { ref, reactive, computed } from 'vue'
-import { permissionService } from '@/modules/roles/services/permission.service.js'
+import { permissionService } from '@/modules/users/services/permission.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
 
 export function useRoles() {
@@ -20,7 +20,7 @@ export function useRoles() {
     loading.value = true
     error.value   = null
     try {
-      loader.show('Cargando roles...')
+      loader.show('Cargando roles y usuarios...')
       const data = await permissionService.getRoles()
       roles.value = data.roles ?? []
     } catch (err) {
