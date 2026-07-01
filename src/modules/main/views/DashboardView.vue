@@ -82,7 +82,7 @@ onMounted(loadAll)
 </script>
 
 <style scoped>
-.dash { max-width: 1200px; }
+.dash { max-width: auto; }
 
 /* Welcome */
 .dash__welcome {

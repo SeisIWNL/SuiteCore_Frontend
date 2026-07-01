@@ -321,7 +321,7 @@ onMounted(fetchRegions)
 </script>
 
 <style scoped>
-.inventory { max-width: 1700px; }
+.inventory { max-width: auto; }
 
 .inventory__head {
   display: flex; justify-content: space-between; align-items: flex-start;
