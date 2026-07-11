@@ -6,6 +6,7 @@ import { useAuthStore } from '@/modules/auth/store.js'
 import { authRoutes }    from '@/modules/auth/router.js'
 import { mainRoutes } from '@/modules/main/router.js'
 import { networkRoutes } from '@/modules/network/router.js'
+import { infrastructureRoutes } from '@/modules/infrastructure/router.js'
 import { inventoryRoutes } from '@/modules/inventory/router.js'
 import { backupsRoutes } from '@/modules/backups/router.js'
 import { usersRoutes } from '@/modules/users/router.js'
@@ -30,6 +31,7 @@ const routes = [
     children: [
       ...mainRoutes,
       ...networkRoutes,
+      ...infrastructureRoutes,
       ...inventoryRoutes,
       ...backupsRoutes,
       ...usersRoutes,

@@ -1,19 +1,20 @@
 // src/modules/network/composables/useGrafanaPanels.js
 import { ref, computed } from 'vue'
-import { networkService } from '@/modules/network/services/network.service.js'
+import { grafanaService, GRAFANA_CATEGORY } from '@/services/grafana.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
 
-export function useGrafanaPanels() {
+/**
+ * Carga los dashboards embebidos de Grafana filtrados por categoría de vista.
+ * @param {string} category  GRAFANA_CATEGORY.NETWORK | GRAFANA_CATEGORY.INFRASTRUCTURE
+ */
+export function useGrafanaPanels(category = GRAFANA_CATEGORY.NETWORK) {
   const loader = useLoaderStore()
 
   const panels  = ref([])
   const error   = ref(null)
   const loading = ref(false)
 
-  // Panel actualmente expandido (null = ninguno)
   const expandedPanel = ref(null)
-
-  // Paneles con estado de carga individual por iframe
   const panelStates = ref({})
 
   const hasPanels = computed(() => panels.value.length > 0)
@@ -21,67 +22,40 @@ export function useGrafanaPanels() {
   async function fetchPanels() {
     loading.value = true
     error.value   = null
-
     try {
-      loader.show('Cargando paneles de red...')
-      const data = await networkService.getGrafanaPanels()
+      loader.show('Cargando dashboards...')
+      const data = await grafanaService.getPanelsByCategory(category)
       panels.value = data
-
-      // Inicializa el estado de cada panel
       data.forEach(p => {
-        panelStates.value[p.panelId] = { loaded: false, error: false }
+        panelStates.value[p.id] = { loaded: false, error: false }
       })
     } catch (err) {
-      error.value = err.message ?? 'No se pudieron obtener los paneles de Grafana.'
+      error.value = err.message ?? 'No se pudieron obtener los dashboards de Grafana.'
     } finally {
       loading.value = false
       loader.hide()
     }
   }
 
-  function onIframeLoad(panelId) {
-    if (panelStates.value[panelId]) {
-      panelStates.value[panelId].loaded = true
-      panelStates.value[panelId].error  = false
+  function onIframeLoad(id) {
+    if (panelStates.value[id]) {
+      panelStates.value[id].loaded = true
+      panelStates.value[id].error  = false
+    }
+  }
+  function onIframeError(id) {
+    if (panelStates.value[id]) {
+      panelStates.value[id].error  = true
+      panelStates.value[id].loaded = true
     }
   }
 
-  function onIframeError(panelId) {
-    if (panelStates.value[panelId]) {
-      panelStates.value[panelId].error  = true
-      panelStates.value[panelId].loaded = true
-    }
+  function toggleExpand(id) {
+    expandedPanel.value = expandedPanel.value === id ? null : id
   }
-
-  function toggleExpand(panelId) {
-    expandedPanel.value = expandedPanel.value === panelId ? null : panelId
-  }
-
-  function isExpanded(panelId) {
-    return expandedPanel.value === panelId
-  }
-
-  function isPanelLoaded(panelId) {
-    return panelStates.value[panelId]?.loaded ?? false
-  }
-
-  function isPanelError(panelId) {
-    return panelStates.value[panelId]?.error ?? false
-  }
-
-  // Añade parámetros de tema oscuro y oculta controles de Grafana
-  // para que encaje con el diseño del dashboard
-  function buildEmbedUrl(url) {
-    try {
-      const u = new URL(url)
-      u.searchParams.set('theme', 'dark')
-      u.searchParams.set('kiosk',  '')       // oculta header de Grafana
-      u.searchParams.set('refresh', '30s')   // auto-refresh cada 30s
-      return u.toString()
-    } catch {
-      return url
-    }
-  }
+  function isExpanded(id) { return expandedPanel.value === id }
+  function isPanelLoaded(id) { return panelStates.value[id]?.loaded ?? false }
+  function isPanelError(id) { return panelStates.value[id]?.error ?? false }
 
   return {
     panels, error, loading, hasPanels,
@@ -90,6 +64,5 @@ export function useGrafanaPanels() {
     onIframeLoad, onIframeError,
     toggleExpand, isExpanded,
     isPanelLoaded, isPanelError,
-    buildEmbedUrl,
   }
 }

@@ -1,19 +1,16 @@
 // src/modules/network/services/network.service.js
-import http from '@/services/http.js'
+import { grafanaService } from '@/services/grafana.service.js'
 
 /**
- * Obtiene los paneles de Grafana configurados en el backend.
- * GET /api/monitoring/grafana-panels
+ * Servicio del módulo de red. Los paneles de Grafana ahora se obtienen
+ * del servicio compartido (que normaliza panelId y category).
  *
- * Respuesta esperada:
- * [
- *   { name: "Panel WAN", panelId: 2, url: "http://grafana.../..." },
- *   { name: "RAM Firewall", panelId: 1, url: "http://grafana.../..." },
- * ]
+ * Se mantiene este wrapper por compatibilidad con quienes ya lo importan
+ * (ej. el widget del dashboard principal).
  */
 export const networkService = {
+  /** Todos los paneles (sin filtrar). */
   async getGrafanaPanels() {
-    const { data } = await http.get('/monitoring/grafana-panels')
-    return data
+    return grafanaService.getPanels()
   },
 }

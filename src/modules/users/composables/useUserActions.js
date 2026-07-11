@@ -107,7 +107,7 @@ export function useUserActions(onChanged, getRoles) {
 
   // ── Guardar (crear o editar) ───────────────────────────────
   async function submitForm() {
-    console.log('[users] submitForm() llamado — mode:', formModal.mode, 'form:', JSON.parse(JSON.stringify(formModal.form)))
+    // console.log('[users] submitForm() llamado — mode:', formModal.mode, 'form:', JSON.parse(JSON.stringify(formModal.form)))
     if (!validate()) {
       console.warn('[users] validación falló:', JSON.parse(JSON.stringify(formModal.errors)))
       return
@@ -125,7 +125,7 @@ export function useUserActions(onChanged, getRoles) {
           password: f.password,
           gidNumber: String(f.gidNumber),
         }
-        console.log('[users] POST /ldap/users payload:', payload)
+        // console.log('[users] POST /ldap/users payload:', payload)
         await usersService.createUser(payload)
       } else {
         const payload = {
@@ -133,7 +133,7 @@ export function useUserActions(onChanged, getRoles) {
           lastName: f.lastName?.trim() ?? '',
           gidNumber: String(f.gidNumber),
         }
-        console.log('[users] PUT /ldap/users/' + formModal.username + ' payload:', payload)
+        // console.log('[users] PUT /ldap/users/' + formModal.username + ' payload:', payload)
         await usersService.updateUser(formModal.username, payload)
       }
       formModal.open = false

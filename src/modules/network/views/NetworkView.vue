@@ -72,19 +72,18 @@
       <button class="network__btn-refresh" @click="handleRefresh">Reintentar</button>
     </div>
 
-    <!-- Grid de paneles -->
+    <!-- Grid de dashboards -->
     <div v-else class="panels-grid">
-      <GrafanaPanel
+      <GrafanaDashboard
         v-for="panel in panels"
-        :key="panel.panelId"
+        :key="panel.id"
         :panel="panel"
-        :embed-url="buildEmbedUrl(panel.url)"
-        :loaded="isPanelLoaded(panel.panelId)"
-        :has-error="isPanelError(panel.panelId)"
-        :expanded="isExpanded(panel.panelId)"
-        @toggle-expand="toggleExpand(panel.panelId)"
-        @iframe-load="onIframeLoad(panel.panelId)"
-        @iframe-error="onIframeError(panel.panelId)"
+        :loaded="isPanelLoaded(panel.id)"
+        :has-error="isPanelError(panel.id)"
+        :expanded="isExpanded(panel.id)"
+        @toggle-expand="toggleExpand(panel.id)"
+        @iframe-load="onIframeLoad(panel.id)"
+        @iframe-error="onIframeError(panel.id)"
       />
     </div>
 
@@ -93,7 +92,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import GrafanaPanel        from '@/modules/network/components/GrafanaPanel.vue'
+import GrafanaDashboard    from '@/modules/network/components/GrafanaDashboard.vue'
 import { useGrafanaPanels } from '@/modules/network/composables/useGrafanaPanels.js'
 
 const {
@@ -102,7 +101,6 @@ const {
   onIframeLoad, onIframeError,
   toggleExpand, isExpanded,
   isPanelLoaded, isPanelError,
-  buildEmbedUrl,
 } = useGrafanaPanels()
 
 const lastRefresh = ref(null)
@@ -118,7 +116,7 @@ onMounted(handleRefresh)
 </script>
 
 <style scoped>
-.network { max-width: auto; }
+.network { max-width: 1400px; }
 
 /* Header */
 .network__head {
@@ -186,7 +184,7 @@ onMounted(handleRefresh)
 /* Panels grid */
 .panels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(560px, 1fr));
   gap: 14px;
 }
 
@@ -195,7 +193,7 @@ onMounted(handleRefresh)
   background: var(--bg-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  height: 320px;
+  height: 520px;
   animation: shimmer 1.4s ease infinite;
 }
 @keyframes shimmer {
