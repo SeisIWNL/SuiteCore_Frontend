@@ -11,5 +11,5 @@ services:
         VITE_APP_NAME: SuiteCore
     container_name: suitecore-frontend
     ports:
-      - "8080:80"
+      - "8090:80"
     restart: unless-stopped
