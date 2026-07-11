@@ -116,7 +116,7 @@ onMounted(handleRefresh)
 </script>
 
 <style scoped>
-.network { max-width: 1400px; }
+.network { max-width: 1100px; }
 
 /* Header */
 .network__head {
