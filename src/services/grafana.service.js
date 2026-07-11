@@ -29,7 +29,6 @@ export const GRAFANA_CATEGORY = {
  */
 const NETWORK_TITLES = [
   'Tráfico de Red',
-  'Seguridad y Accesos',
 ]
 
 function normalizeText(s) {
