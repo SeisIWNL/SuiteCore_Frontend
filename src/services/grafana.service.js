@@ -11,8 +11,6 @@ import http from '@/services/http.js'
  *   { title: "SuiteCore SCNO - Recursos de Hosts", embedUrl: "http://.../d/...?orgId=1&kiosk" },
  * ]
  *
- * El response ya no trae `category`. El reparto entre las vistas de Red e
- * Infraestructura se hace por título, con el mapeo editable de abajo.
  */
 
 // Categorías de vista
