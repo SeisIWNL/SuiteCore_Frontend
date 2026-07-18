@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { usePermissionsStore } from '@/stores/permissions.js'
 import { dashboardService } from '@/modules/main/services/dashboard.service.js'
+import { incidentsService } from '@/modules/main/services/incidents.service.js'
 
 /**
  * Decide qué widgets del dashboard mostrar según los módulos permitidos
@@ -16,12 +17,12 @@ export function useDashboardWidgets() {
   // Catálogo de widgets disponibles
   const WIDGETS = [
     {
-      id: 'netbox-ips',
-      title: 'Direcciones IP por subred',
-      subtitle: 'Distribución del inventario · NetBox',
-      requires: ['/inventory'],
-      kind: 'netbox',
-      link: '/inventory',
+      id: 'incidents',
+      title: 'Últimos incidentes',
+      subtitle: 'Eventos recientes · Graylog',
+      requires: ['/alerts', '/logs', '/dashboard'],
+      kind: 'incidents',
+      link: '/alerts',
     },
     {
       id: 'backups',
@@ -42,19 +43,19 @@ export function useDashboardWidgets() {
   const has = (id) => visibleWidgets.value.some(w => w.id === id)
 
   // ── Datos por fuente ───────────────────────────────────────
-  const netbox = ref({ data: null, loading: false, error: null })
+  const incidents = ref({ data: null, loading: false, error: null })
   const backups = ref({ data: null, loading: false, error: null })
 
-  async function loadNetbox() {
-    if (!has('netbox-ips')) return
-    netbox.value.loading = true
-    netbox.value.error = null
+  async function loadIncidents() {
+    if (!has('incidents')) return
+    incidents.value.loading = true
+    incidents.value.error = null
     try {
-      netbox.value.data = await dashboardService.getNetboxSummary()
+      incidents.value.data = await incidentsService.getEvents()
     } catch (err) {
-      netbox.value.error = err.message ?? 'Error al cargar datos de NetBox.'
+      incidents.value.error = err.message ?? 'Error al cargar eventos de Graylog.'
     } finally {
-      netbox.value.loading = false
+      incidents.value.loading = false
     }
   }
 
@@ -73,12 +74,12 @@ export function useDashboardWidgets() {
 
   // Carga todo lo que el usuario tenga permitido, en paralelo
   async function loadAll() {
-    await Promise.all([loadNetbox(), loadBackups()])
+    await Promise.all([loadIncidents(), loadBackups()])
   }
 
   return {
     visibleWidgets, hasWidgets, has,
-    netbox, backups,
-    loadAll, loadNetbox, loadBackups,
+    incidents, backups,
+    loadAll, loadBackups,
   }
 }

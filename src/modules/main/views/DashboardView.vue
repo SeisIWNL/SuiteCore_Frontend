@@ -100,12 +100,12 @@
     <!-- Grid de widgets dinámicos -->
     <div v-else class="dash__widgets">
 
-      <!-- NetBox (inventario) -->
-      <NetboxIpsWidget
-        v-if="has('netbox-ips')"
-        :data="netbox.data"
-        :loading="netbox.loading"
-        :error="netbox.error"
+      <!-- Incidentes (Graylog) -->
+      <IncidentEventsWidget
+        v-if="has('incidents')"
+        :data="incidents.data"
+        :loading="incidents.loading"
+        :error="incidents.error"
       />
 
       <!-- Oxidized (respaldos) -->
@@ -126,7 +126,7 @@ import { useAuthStore } from '@/modules/auth/store.js'
 import { useDashboardWidgets } from '@/modules/main/composables/useDashboardWidgets.js'
 import { useDashboardData } from '@/modules/main/composables/useDashboardData.js'
 import { readChartTheme } from '@/modules/main/composables/useChartTheme.js'
-import NetboxIpsWidget     from '@/modules/main/components/widgets/NetboxIpsWidget.vue'
+import IncidentEventsWidget from '@/modules/main/components/widgets/IncidentEventsWidget.vue'
 import BackupsStatusWidget from '@/modules/main/components/widgets/BackupsStatusWidget.vue'
 import ModulesStatusChart  from '@/modules/main/components/ModulesStatusChart.vue'
 import StatusDonut         from '@/modules/network/components/StatusDonut.vue'
@@ -136,7 +136,7 @@ const firstName = computed(() => authStore.user?.firstName ?? 'Operador')
 
 const {
   hasWidgets, has,
-  netbox, backups,
+  incidents, backups,
   loadAll,
 } = useDashboardWidgets()
 

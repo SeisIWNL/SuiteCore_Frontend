@@ -12,6 +12,8 @@ import { backupsRoutes } from '@/modules/backups/router.js'
 import { usersRoutes } from '@/modules/users/router.js'
 import { vpnRoutes } from '@/modules/vpn/router.js'
 import { sdnRoutes } from '@/modules/sdn/router.js'
+import { alertsRoutes } from '@/modules/alerts/router.js'
+import { logsRoutes } from '@/modules/logs/router.js'
 
 // ── Importar el Dashboard layout ──────────────────────────────
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
@@ -37,6 +39,8 @@ const routes = [
       ...usersRoutes,
       ...vpnRoutes,
       ...sdnRoutes,
+      ...alertsRoutes,
+      ...logsRoutes,
       // ...serversRoutes,   ← cada módulo nuevo se agrega aquí
     ],
   },
