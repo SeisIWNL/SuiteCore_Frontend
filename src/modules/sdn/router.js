@@ -9,3 +9,4 @@ export const sdnRoutes = [
     meta: { title: 'Controlador SDN', icon: '🔀' },
   },
 ]
+  
