@@ -163,7 +163,7 @@ const chartOptions = computed(() => {
 .wcard__state--error { color: var(--danger); }
 
 .wcard__chart-row { display: flex; align-items: center; gap: 18px; }
-.wcard__donut { position: relative; width: 280px; height: 240px; flex-shrink: 0; }
+.wcard__donut { position: relative; width: 160px; height: 160px; flex-shrink: 0; }
 .wcard__donut-center {
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; pointer-events: none;

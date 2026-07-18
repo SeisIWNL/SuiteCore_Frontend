@@ -1,7 +1,6 @@
 // src/modules/main/services/dashboard.service.js
 import { inventoryService, subnetOf } from '@/modules/inventory/services/inventory.service.js'
 import { backupsService } from '@/modules/backups/services/backups.service.js'
-import { networkService } from '@/modules/network/services/network.service.js'
 
 /**
  * Agrega datos de varios servicios para alimentar los widgets del dashboard.
@@ -88,13 +87,5 @@ export const dashboardService = {
       failed,
       byGroup: [...groupMap.values()],
     }
-  },
-
-  /**
-   * Grafana — paneles embebidos (todos).
-   * @returns {Promise<Array<{ name, panelId, url }>>}
-   */
-  async getGrafanaPanels() {
-    return networkService.getGrafanaPanels()
   },
 }

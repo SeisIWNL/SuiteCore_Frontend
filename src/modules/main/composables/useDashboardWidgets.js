@@ -16,14 +16,6 @@ export function useDashboardWidgets() {
   // Catálogo de widgets disponibles
   const WIDGETS = [
     {
-      id: 'grafana',
-      title: 'Paneles de monitoreo',
-      subtitle: 'Series en tiempo real · Grafana',
-      requires: ['/network', '/infrastructure'],
-      kind: 'grafana',
-      link: '/network',
-    },
-    {
       id: 'netbox-ips',
       title: 'Direcciones IP por subred',
       subtitle: 'Distribución del inventario · NetBox',
@@ -52,7 +44,6 @@ export function useDashboardWidgets() {
   // ── Datos por fuente ───────────────────────────────────────
   const netbox = ref({ data: null, loading: false, error: null })
   const backups = ref({ data: null, loading: false, error: null })
-  const grafana = ref({ data: [], loading: false, error: null })
 
   async function loadNetbox() {
     if (!has('netbox-ips')) return
@@ -80,27 +71,14 @@ export function useDashboardWidgets() {
     }
   }
 
-  async function loadGrafana() {
-    if (!has('grafana')) return
-    grafana.value.loading = true
-    grafana.value.error = null
-    try {
-      grafana.value.data = await dashboardService.getGrafanaPanels()
-    } catch (err) {
-      grafana.value.error = err.message ?? 'Error al cargar paneles de Grafana.'
-    } finally {
-      grafana.value.loading = false
-    }
-  }
-
   // Carga todo lo que el usuario tenga permitido, en paralelo
   async function loadAll() {
-    await Promise.all([loadNetbox(), loadBackups(), loadGrafana()])
+    await Promise.all([loadNetbox(), loadBackups()])
   }
 
   return {
     visibleWidgets, hasWidgets, has,
-    netbox, backups, grafana,
-    loadAll, loadNetbox, loadBackups, loadGrafana,
+    netbox, backups,
+    loadAll, loadNetbox, loadBackups,
   }
 }
