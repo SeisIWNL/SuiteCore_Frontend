@@ -82,11 +82,11 @@ const TABS = [
     subtitle: 'Fabricantes de los equipos inventariados',
     icon: svg('<path d="M2 20h20M4 20V8l5 3V8l5 3V8l5 3v9"/>'),
   },
-  {
-    key: 'regions', label: 'Regiones',
-    subtitle: 'Regiones geográficas del inventario',
-    icon: svg('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
-  },
+  //{
+  //  key: 'regions', label: 'Regiones',
+  //  subtitle: 'Regiones geográficas del inventario',
+  //  icon: svg('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
+  //},
 ]
 
 const activeTab = ref('devices')

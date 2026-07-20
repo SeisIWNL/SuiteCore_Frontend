@@ -4,14 +4,7 @@
     <!-- Logo -->
     <div class="sidebar__logo">
       <div class="sidebar__logo-mark">
-        <svg width="28" height="28" viewBox="0 0 42 42" fill="none">
-          <path d="M8 1h26l7 7v26l-7 7H8L1 34V8L8 1z"
-            fill="none" stroke="var(--accent)" stroke-width="1.2"/>
-          <text x="21" y="26" text-anchor="middle"
-            font-family="'Syne', sans-serif"
-            font-weight="800" font-size="14"
-            fill="var(--accent)" letter-spacing="-1">SC</text>
-        </svg>
+        <img src="@/assets/logo.png" alt="SuiteCore" class="sidebar__logo-img" />
       </div>
       <Transition name="fade-label">
         <div v-if="mainStore.sidebarOpen" class="sidebar__logo-text">
@@ -200,13 +193,20 @@ const navGroups = [
         roles: ['admin', 'security'],
         icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
       },
-      {
-        to: '/alerts',
-        label: 'Notificación de incidentes',
-        badge: null,
-        roles: ['admin', 'operator'],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.09 6.09l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
-      },
+      //{
+      //  to: '/radius',
+      //  label: 'RADIUS',
+      //  badge: null,
+      //  roles: [],
+      //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+      //},
+      //{
+      //  to: '/alerts',
+      //  label: 'Alertas e incidentes',
+      //  badge: null,
+      //  roles: ['admin', 'operator'],
+      //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.09 6.09l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+      //},
     ],
   },
   {
@@ -228,6 +228,13 @@ const navGroups = [
     label: 'Auditoría',
     icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
     items: [
+      //{
+      //  to: '/logs',
+      //  label: 'Logs y eventos',
+      //  badge: null,
+      //  roles: [],
+      //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+      //},
       {
         to: '/backups',
         label: 'Respaldos de configuración',
@@ -303,7 +310,13 @@ function isActive(to) {
 }
 .sidebar__logo-mark {
   flex-shrink: 0;
+  width: 28px; height: 28px;
   filter: drop-shadow(0 0 8px rgba(96,165,250,.3));
+}
+.sidebar__logo-img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
 }
 .sidebar__logo-text { display: flex; flex-direction: column; gap: 1px; white-space: nowrap; }
 .sidebar__logo-name {

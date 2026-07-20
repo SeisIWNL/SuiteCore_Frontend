@@ -10,17 +10,8 @@
       </div>
     </div>
 
-    <!-- Derecha: tiempo + user -->
+    <!-- Derecha: acciones + user -->
     <div class="navbar__right">
-
-      <!-- Timestamp -->
-      <div class="navbar__clock">
-        <span class="navbar__clock-date">{{ currentDate }}</span>
-        <span class="navbar__clock-time">{{ currentTime }}</span>
-      </div>
-
-      <!-- Divider -->
-      <div class="navbar__vdiv" />
 
       <!-- Notificaciones -->
       <button class="navbar__icon-btn" @click="$router.push('/alerts')">
@@ -30,12 +21,14 @@
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
           <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
         </svg>
-        <span class="navbar__notif-badge">5</span>
+        <span class="navbar__notif-badge" />
       </button>
 
       <!-- Alterna tema -->
       <ThemeToggle />
-      <button class="navbar__icon-btn" />  <!-- notificaciones -->
+
+      <!-- Divider -->
+      <div class="navbar__vdiv" />
 
       <!-- Usuario -->
       <div class="navbar__user" ref="userRef" @click="toggleMenu">
@@ -113,18 +106,6 @@ const fullName = computed(() => {
 })
 const currentTitle = computed(() => route.meta?.title ?? 'Dashboard')
 
-// Reloj
-const currentTime = ref('')
-const currentDate = ref('')
-let clockInterval
-function updateClock() {
-  const now = new Date()
-  currentTime.value = now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-  currentDate.value = now.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-}
-onMounted(() => { updateClock(); clockInterval = setInterval(updateClock, 1000) })
-onUnmounted(() => clearInterval(clockInterval))
-
 function toggleMenu() { menuOpen.value = !menuOpen.value }
 function handleOutsideClick(e) {
   if (userRef.value && !userRef.value.contains(e.target)) menuOpen.value = false
@@ -173,14 +154,6 @@ async function handleLogout() {
 /* Right */
 .navbar__right { display: flex; align-items: center; gap: 12px; position: relative; }
 
-/* Clock */
-.navbar__clock { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-.navbar__clock-time {
-  font-size: .8rem; font-weight: 500; color: var(--text-1);
-  font-variant-numeric: tabular-nums; letter-spacing: .04em;
-}
-.navbar__clock-date { font-size: .65rem; color: var(--text-3); }
-
 /* Divider */
 .navbar__vdiv { width: 1px; height: 22px; background: var(--border); }
 
@@ -193,11 +166,10 @@ async function handleLogout() {
 }
 .navbar__icon-btn:hover { color: var(--text-1); background: var(--bg-hover); }
 .navbar__notif-badge {
-  position: absolute; top: 2px; right: 2px;
-  width: 14px; height: 14px;
-  background: var(--warning);
-  color: var(--bg); font-size: .55rem; font-weight: 700;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  position: absolute; top: 5px; right: 5px;
+  width: 8px; height: 8px;
+  background: var(--danger);
+  border-radius: 50%;
   border: 1.5px solid var(--bg-1);
 }
 

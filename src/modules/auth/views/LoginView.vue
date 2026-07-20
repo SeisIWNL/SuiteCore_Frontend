@@ -4,23 +4,7 @@
 
       <!-- Logo + marca -->
       <div class="login__brand">
-        <div class="login__logo">
-          <svg width="42" height="42" viewBox="0 0 42 42" fill="none">
-            <!-- Marco exterior con esquinas cortadas -->
-            <path d="M8 1h26l7 7v26l-7 7H8L1 34V8L8 1z"
-              fill="none" stroke="var(--accent)" stroke-width="1"/>
-            <!-- Líneas internas decorativas -->
-            <line x1="1"  y1="8"  x2="6"  y2="8"  stroke="var(--accent)" stroke-width=".8" opacity=".5"/>
-            <line x1="36" y1="1"  x2="36" y2="6"   stroke="var(--accent)" stroke-width=".8" opacity=".5"/>
-            <line x1="41" y1="34" x2="36" y2="34"  stroke="var(--accent)" stroke-width=".8" opacity=".5"/>
-            <line x1="6"  y1="41" x2="6"  y2="36"  stroke="var(--accent)" stroke-width=".8" opacity=".5"/>
-            <!-- Texto SC -->
-            <text x="21" y="26" text-anchor="middle"
-              font-family="'Syne', sans-serif"
-              font-weight="800" font-size="15"
-              fill="var(--accent)" letter-spacing="-1">SC</text>
-          </svg>
-        </div>
+        <img src="@/assets/logo.png" alt="SuiteCore" class="login__logo" />
         <div class="login__brand-text">
           <span class="login__brand-name">SuiteCore</span>
           <span class="login__brand-tag">NOC Dashboard</span>
@@ -33,12 +17,8 @@
         <!-- Indicador de estado del sistema -->
         <div class="login__status">
           <span class="login__status-dot" />
-          <span class="login__status-label">Sistema operacional</span>
-          <span class="login__status-time">{{ currentTime }}</span>
+          <span>Sistema operacional</span>
         </div>
-
-        <!-- Separador -->
-        <div class="login__sep" />
 
         <!-- Encabezado -->
         <div class="login__head">
@@ -83,11 +63,9 @@
 
           <!-- Usuario -->
           <div class="field" :class="{ 'field--error': errors.username }">
-            <label class="field__label" for="username">
-              <span class="field__label-prefix">01</span> Usuario
-            </label>
+            <label class="field__label" for="username">Usuario</label>
             <div class="field__wrap">
-              <svg class="field__icon" width="13" height="13" viewBox="0 0 24 24"
+              <svg class="field__icon" width="15" height="15" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -108,11 +86,9 @@
 
           <!-- Contraseña -->
           <div class="field" :class="{ 'field--error': errors.password }">
-            <label class="field__label" for="password">
-              <span class="field__label-prefix">02</span> Contraseña
-            </label>
+            <label class="field__label" for="password">Contraseña</label>
             <div class="field__wrap">
-              <svg class="field__icon" width="13" height="13" viewBox="0 0 24 24"
+              <svg class="field__icon" width="15" height="15" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -133,13 +109,13 @@
                 @click="showPassword = !showPassword"
                 :aria-label="showPassword ? 'Ocultar' : 'Mostrar'"
               >
-                <svg v-if="!showPassword" width="13" height="13" viewBox="0 0 24 24"
+                <svg v-if="!showPassword" width="15" height="15" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
-                <svg v-else width="13" height="13" viewBox="0 0 24 24"
+                <svg v-else width="15" height="15" viewBox="0 0 24 24"
                   fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <path d="M17.94 17.94A10 10 0 0 1 12 20c-7 0-11-8-11-8a18 18 0 0 1 5.06-5.94"/>
@@ -152,7 +128,7 @@
           </div>
 
           <!-- Recordar sesión -->
-          <label class="login__remember">
+          <!-- <label class="login__remember">
             <input
               v-model="rememberMe"
               v-bind="rememberMeAttrs"
@@ -161,7 +137,7 @@
             />
             <span class="login__checkbox-box" />
             <span>Recordar sesión en este equipo</span>
-          </label>
+          </label> -->
 
           <!-- Submit -->
           <button
@@ -172,7 +148,7 @@
           >
             <span v-if="!loading" class="login__btn-text">
               Ingresar
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2.5"
                 stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/>
@@ -189,7 +165,7 @@
 
         <!-- Nota TLS -->
         <div class="login__tls">
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none"
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
@@ -202,7 +178,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import AuthLayout  from '@/modules/auth/layouts/AuthLayout.vue'
 import { useLogin } from '@/modules/auth/composables/useLogin.js'
 import { useSessionStore } from '@/stores/session.js'
@@ -218,23 +194,6 @@ const {
 const showPassword = ref(false)
 const sessionStore   = useSessionStore()
 const sessionExpired = computed(() => sessionStore.expiredReason === 'expired')
-
-
-// Limpia el motivo una vez que el usuario lo ve
-onMounted(() => {
-  // Lo dejamos visible para que lo lea; se limpia al cerrar o al hacer login
-})
-
-// Reloj en tiempo real
-const currentTime = ref('')
-let clockInterval
-function updateClock() {
-  currentTime.value = new Date().toLocaleTimeString('es-PE', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-  })
-}
-onMounted(() => { updateClock(); clockInterval = setInterval(updateClock, 1000) })
-onUnmounted(() => clearInterval(clockInterval))
 </script>
 
 <style scoped>
@@ -243,7 +202,7 @@ onUnmounted(() => clearInterval(clockInterval))
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 26px;
   width: 100%;
   max-width: 400px;
   animation: loginIn .4s ease both;
@@ -260,85 +219,43 @@ onUnmounted(() => clearInterval(clockInterval))
   gap: 14px;
 }
 .login__logo {
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 12px rgba(57,211,83,.3));
+  object-fit: contain;
 }
 .login__brand-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 .login__brand-name {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 800;
-  color: var(--text-1);
-  letter-spacing: -.5px;
-  line-height: 1;
+  color: #111827;
+  letter-spacing: -.3px;
+  line-height: 1.15;
 }
 .login__brand-tag {
-  font-size: .65rem;
-  color: var(--accent);
-  letter-spacing: .14em;
+  font-size: .72rem;
+  color: #2563eb;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  font-weight: 500;
-}
-
-/* ── Session expired ── */
-.login__expired {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 12px;
-  background: rgba(88, 166, 255, .06);
-  border: 1px solid rgba(88, 166, 255, .2);
-  border-radius: var(--radius);
-  font-size: .75rem;
-}
-.login__expired-icon {
-  color: var(--blue);
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.login__expired-title {
   font-weight: 700;
-  color: var(--blue);
-  font-size: .78rem;
-  margin-bottom: 2px;
 }
-.login__expired-desc {
-  color: var(--text-2);
-  line-height: 1.4;
-}
-.login__expired-close {
-  margin-left: auto;
-  background: none; border: none;
-  color: var(--text-3); cursor: pointer; font-size: .7rem;
-  flex-shrink: 0; padding: 0 2px;
-}
-.login__expired-close:hover { color: var(--text-1); }
 
 /* ── Card ── */
 .login__card {
   width: 100%;
-  background: var(--bg-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 30px 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  position: relative;
-  overflow: hidden;
-}
-/* Esquina decorativa */
-.login__card::before {
-  content: '';
-  position: absolute;
-  top: 0; right: 0;
-  width: 60px; height: 60px;
-  background: linear-gradient(225deg, var(--accent-muted) 0%, transparent 60%);
-  pointer-events: none;
+  gap: 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .04), 0 12px 32px rgba(15, 23, 42, .06);
 }
 
 /* ── Status bar ── */
@@ -346,47 +263,30 @@ onUnmounted(() => clearInterval(clockInterval))
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: .68rem;
-  color: var(--text-3);
-  letter-spacing: .04em;
+  font-size: .78rem;
+  color: #6b7280;
 }
 .login__status-dot {
-  width: 6px; height: 6px;
-  background: var(--accent);
+  width: 7px; height: 7px;
+  background: #22c55e;
   border-radius: 50%;
-  box-shadow: 0 0 6px var(--accent);
-  animation: pulse 2s infinite;
+  box-shadow: 0 0 5px rgba(34,197,94,.5);
   flex-shrink: 0;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: .4; }
-}
-.login__status-time {
-  margin-left: auto;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-3);
-}
-
-/* ── Separator ── */
-.login__sep {
-  height: 1px;
-  background: var(--border);
 }
 
 /* ── Head ── */
 .login__title {
   font-family: var(--font-display);
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-1);
-  letter-spacing: -.2px;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -.3px;
 }
 .login__sub {
-  font-size: .72rem;
-  color: var(--text-3);
+  font-size: .82rem;
+  color: #6b7280;
   line-height: 1.5;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 /* ── Error ── */
@@ -394,16 +294,16 @@ onUnmounted(() => clearInterval(clockInterval))
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px;
-  background: var(--danger-muted);
-  border: 1px solid rgba(248,81,73,.25);
-  border-radius: var(--radius);
-  font-size: .75rem;
-  color: var(--danger);
+  padding: 9px 11px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  font-size: .78rem;
+  color: #dc2626;
 }
 .login__error-icon {
   width: 16px; height: 16px;
-  border: 1px solid var(--danger);
+  border: 1px solid #dc2626;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: .65rem; font-weight: 700;
@@ -412,131 +312,158 @@ onUnmounted(() => clearInterval(clockInterval))
 .login__error-close {
   margin-left: auto;
   background: none; border: none;
-  color: var(--danger); cursor: pointer;
+  color: #dc2626; cursor: pointer;
   font-size: .7rem; opacity: .7;
 }
 .login__error-close:hover { opacity: 1; }
+
+/* ── Session expired ── */
+.login__expired {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  font-size: .76rem;
+}
+.login__expired-icon {
+  color: #2563eb;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.login__expired-title {
+  font-weight: 700;
+  color: #2563eb;
+  font-size: .8rem;
+  margin-bottom: 2px;
+}
+.login__expired-desc {
+  color: #4b5563;
+  line-height: 1.4;
+}
+.login__expired-close {
+  margin-left: auto;
+  background: none; border: none;
+  color: #9ca3af; cursor: pointer; font-size: .7rem;
+  flex-shrink: 0; padding: 0 2px;
+}
+.login__expired-close:hover { color: #111827; }
 
 .alert-fade-enter-active, .alert-fade-leave-active { transition: opacity .2s, transform .2s; }
 .alert-fade-enter-from, .alert-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 
 /* ── Form ── */
-.login__form { display: flex; flex-direction: column; gap: 14px; }
+.login__form { display: flex; flex-direction: column; gap: 16px; }
 
 /* Fields */
-.field { display: flex; flex-direction: column; gap: 5px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
 .field__label {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: .7rem;
-  color: var(--text-2);
-  letter-spacing: .05em;
+  font-size: .72rem;
+  color: #374151;
+  letter-spacing: .06em;
   text-transform: uppercase;
-}
-.field__label-prefix {
-  color: var(--accent);
-  font-size: .62rem;
-  opacity: .7;
+  font-weight: 700;
 }
 .field__wrap { position: relative; }
 .field__icon {
   position: absolute;
-  left: 10px; top: 50%; transform: translateY(-50%);
-  color: var(--text-3);
+  left: 12px; top: 50%; transform: translateY(-50%);
+  color: #9ca3af;
   pointer-events: none;
 }
 .field__input {
   display: block; width: 100%;
-  height: 38px;
-  padding: 0 10px 0 32px;
-  background: var(--bg-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-1);
-  font-size: .88rem;
-  font-family: var(--font-mono);
+  height: 44px;
+  padding: 0 12px 0 36px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  color: #111827;
+  font-size: .9rem;
+  font-family: var(--font-sans);
   outline: none;
-  transition: border-color .15s, box-shadow .15s;
+  transition: border-color .15s, box-shadow .15s, background .15s;
 }
-.field__input::placeholder { color: var(--text-3); }
+.field__input::placeholder { color: #9ca3af; }
 .field__input:focus {
-  border-color: var(--accent-dim);
-  box-shadow: 0 0 0 2px var(--accent-glow);
+  background: #ffffff;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.12);
 }
-.field__input--pr { padding-right: 36px; }
-.field--error .field__input { border-color: var(--danger); }
-.field--error .field__input:focus { box-shadow: 0 0 0 2px var(--danger-muted); }
+.field__input--pr { padding-right: 40px; }
+.field--error .field__input { border-color: #fca5a5; }
+.field--error .field__input:focus { box-shadow: 0 0 0 3px rgba(220,38,38,.12); }
 .field__toggle {
   position: absolute;
-  right: 0; top: 0; height: 100%; width: 36px;
+  right: 0; top: 0; height: 100%; width: 40px;
   background: none; border: none;
-  color: var(--text-3); cursor: pointer;
+  color: #9ca3af; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: color .15s;
 }
-.field__toggle:hover { color: var(--text-1); }
-.field__error { font-size: .7rem; color: var(--danger); }
+.field__toggle:hover { color: #4b5563; }
+.field__error { font-size: .72rem; color: #dc2626; }
 
 /* Recordar sesión */
 .login__remember {
-  display: flex; align-items: center; gap: 8px;
-  font-size: .75rem; color: var(--text-2);
+  display: flex; align-items: center; gap: 9px;
+  font-size: .82rem; color: #4b5563;
   cursor: pointer; user-select: none;
 }
 .login__checkbox { display: none; }
 .login__checkbox-box {
-  width: 14px; height: 14px;
-  border: 1px solid var(--border-mid);
-  border-radius: 3px;
-  background: var(--bg-2);
+  width: 16px; height: 16px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 5px;
+  background: #ffffff;
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
   transition: border-color .15s, background .15s;
 }
 .login__checkbox:checked + .login__checkbox-box {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: #2563eb;
+  border-color: #2563eb;
 }
 .login__checkbox:checked + .login__checkbox-box::after {
   content: '✓';
-  font-size: .6rem;
-  color: var(--bg);
+  font-size: .68rem;
+  color: #ffffff;
   font-weight: 700;
 }
 
 /* Submit button */
 .login__btn {
   width: 100%;
-  height: 40px;
-  background: var(--accent);
-  color: var(--bg);
+  height: 46px;
+  background: #2563eb;
+  color: #ffffff;
   border: none;
-  border-radius: var(--radius);
-  font-family: var(--font-mono);
-  font-size: .85rem;
+  border-radius: 12px;
+  font-family: var(--font-sans);
+  font-size: .92rem;
   font-weight: 700;
   cursor: pointer;
-  letter-spacing: .04em;
   transition: background .15s, transform .1s, box-shadow .15s;
   margin-top: 2px;
 }
 .login__btn:hover:not(:disabled) {
-  background: var(--accent-dim);
-  box-shadow: 0 0 20px var(--accent-glow);
+  background: #1d4ed8;
+  box-shadow: 0 4px 14px rgba(37,99,235,.3);
 }
 .login__btn:active:not(:disabled) { transform: translateY(1px); }
-.login__btn:disabled { opacity: .5; cursor: not-allowed; }
+.login__btn:disabled { opacity: .55; cursor: not-allowed; }
 .login__btn-text, .login__btn-loader {
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.login__btn--loading { background: var(--accent-dim); }
+.login__btn--loading { background: #1d4ed8; }
 
 /* Spinner del botón */
 .login__spinner {
-  width: 13px; height: 13px;
-  border: 2px solid rgba(8,12,16,.3);
-  border-top-color: var(--bg);
+  width: 14px; height: 14px;
+  border: 2px solid rgba(255,255,255,.35);
+  border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin .6s linear infinite;
 }
@@ -544,8 +471,7 @@ onUnmounted(() => clearInterval(clockInterval))
 
 /* TLS note */
 .login__tls {
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-  font-size: .67rem; color: var(--text-3);
-  letter-spacing: .04em;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: .72rem; color: #9ca3af;
 }
 </style>
