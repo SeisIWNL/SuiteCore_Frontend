@@ -4,7 +4,7 @@
     <!-- Logo -->
     <div class="sidebar__logo">
       <div class="sidebar__logo-mark">
-        <img src="@/assets/logo.png" alt="SuiteCore" class="sidebar__logo-img" />
+        <img src="@/assets/suitecore-logo.png" alt="SuiteCore" class="sidebar__logo-img" />
       </div>
       <Transition name="fade-label">
         <div v-if="mainStore.sidebarOpen" class="sidebar__logo-text">
@@ -35,6 +35,21 @@
         </Transition>
       </RouterLink>
 
+      <!-- Cargando módulos del usuario -->
+      <div v-if="permsStore.loading && !permsStore.menuBlocks" class="sidebar__skeleton">
+        <div v-for="i in 4" :key="i" class="sidebar__skeleton-row" />
+      </div>
+
+      <!-- Error al cargar módulos -->
+      <div v-else-if="permsStore.error" class="sidebar__load-error">
+        <Transition name="fade-label">
+          <div v-if="mainStore.sidebarOpen" class="sidebar__load-error-text">
+            No se pudieron cargar tus módulos.
+            <button class="sidebar__retry" @click="permsStore.loadMenus(true)">Reintentar</button>
+          </div>
+        </Transition>
+      </div>
+
       <!-- Grupos colapsables -->
       <template v-for="group in filteredGroups" :key="group.id">
 
@@ -46,14 +61,14 @@
           <button
             v-if="mainStore.sidebarOpen"
             class="sidebar__group-header"
-            :class="{ 'sidebar__group-header--open': openGroups[group.id] }"
+            :class="{ 'sidebar__group-header--open': isGroupOpen(group.id) }"
             @click="toggleGroup(group.id)"
           >
             <span class="sidebar__group-icon" v-html="group.icon" />
             <span class="sidebar__group-label">{{ group.label }}</span>
             <svg
               class="sidebar__group-chevron"
-              :class="{ 'sidebar__group-chevron--open': openGroups[group.id] }"
+              :class="{ 'sidebar__group-chevron--open': isGroupOpen(group.id) }"
               width="11" height="11" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.5"
               stroke-linecap="round" stroke-linejoin="round">
@@ -65,7 +80,7 @@
         <!-- Items del grupo -->
         <template v-if="mainStore.sidebarOpen">
           <Transition name="group-expand">
-            <div v-if="openGroups[group.id]" class="sidebar__group-items">
+            <div v-if="isGroupOpen(group.id)" class="sidebar__group-items">
               <RouterLink
                 v-for="item in group.items"
                 :key="item.to"
@@ -136,151 +151,83 @@ const router    = useRouter()
 
 
 // ── Estado de grupos abiertos/cerrados ────────────────────────
-// true = abierto por defecto
-const openGroups = reactive({
-  monitoreo:      true,
-  red:            true,
-  seguridad:      false,
-  inventario:     false,
-  usuarios:       false,
-})
+// Por defecto todos los grupos empiezan abiertos; se recuerda el estado
+// manual de cada uno (por id derivado del nombre del bloque) en este objeto.
+const openGroups = reactive({})
 
+function isGroupOpen(id) {
+  return openGroups[id] ?? true
+}
 function toggleGroup(id) {
-  openGroups[id] = !openGroups[id]
+  openGroups[id] = !isGroupOpen(id)
 }
 
-// ── Definición de grupos y módulos ────────────────────────────
-// roles: [] = visible para todos
-// roles: ['admin'] = solo visible para admin (se filtrará cuando se implementen roles)
-const navGroups = [
-  {
-    id: 'monitoreo',
-    label: 'Monitoreo',
-    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
-    items: [
-      {
-        to: '/infrastructure',
-        label: 'Supervisión de infraestructura',
-        badge: null,
-        roles: [],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`,
-      },
-      {
-        to: '/network',
-        label: 'Red',
-        badge: null,
-        roles: [],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="6"/><rect x="9" y="16" width="6" height="6"/><rect x="2" y="9" width="6" height="6"/><rect x="16" y="9" width="6" height="6"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
-      },
-      {
-        to: '/sdn',
-        label: 'Supervisión SDN',
-        badge: null,
-        roles: ['admin', 'operator'],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>`,
-      },
-    ],
-  },
-  {
-    id: 'red',
-    label: 'Red y seguridad',
-    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-    items: [
-      {
-        to: '/vpn',
-        label: 'VPN',
-        badge: null,
-        roles: ['admin', 'security'],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-      },
-      //{
-      //  to: '/radius',
-      //  label: 'RADIUS',
-      //  badge: null,
-      //  roles: [],
-      //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
-      //},
-      //{
-      //  to: '/alerts',
-      //  label: 'Alertas e incidentes',
-      //  badge: null,
-      //  roles: ['admin', 'operator'],
-      //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.09 6.09l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
-      //},
-    ],
-  },
-  {
-    id: 'inventario',
-    label: 'Inventario',
-    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
-    items: [
-      {
-        to: '/inventory',
-        label: 'Inventario y documentación',
-        badge: null,
-        roles: ['admin', 'operator'],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
-      },
-    ],
-  },
-  {
-    id: 'seguridad',
-    label: 'Auditoría',
-    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-    items: [
-      //{
-      //  to: '/logs',
-      //  label: 'Logs y eventos',
-      //  badge: null,
-      //  roles: [],
-      //  icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
-      //},
-      {
-        to: '/backups',
-        label: 'Respaldos de configuración',
-        badge: null,
-        roles: ['admin'],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 7 20 3 4 3 4 7"/><path d="M20 21H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2z"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`,
-      },
-    ],
-  },
-  {
-    id: 'usuarios',
-    label: 'Usuarios',
-    icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-    items: [
-      {
-        to: '/users',
-        label: 'Gestión de usuarios',
-        badge: null,
-        roles: ['admin'],
-        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-      },
-    ],
-  },
-]
+function slugifyId(name) {
+  return (name ?? '')
+    .toString()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
 
-// ── Filtrado por permisos del rol ─────────────────────────────
-// Oculta items cuyo slug el rol no puede ver, y oculta grupos que
-// queden sin items. Si los permisos aún no se cargaron (set null),
-// se muestran todos (fail-open en arranque, el guard protege el acceso).
+// -- Iconos ------------------------------------------------------
+// El backend (GET /Permission/Menus) no envia iconos, solo id/name/slug.
+// Se mantiene un catalogo local slug -> SVG (y bloque -> SVG), con un
+// fallback generico para cualquier modulo nuevo que aun no este aqui.
+const DEFAULT_GROUP_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>`
+const DEFAULT_ITEM_ICON  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>`
+
+const BLOCK_ICONS = {
+  'Monitoreo':  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+  'Seguridad':  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+  'Inventario': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+  'Auditoría':  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+  'Usuarios':   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+}
+
+const MENU_ICONS = {
+  '/infrastructure': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>`,
+  '/network':        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="6"/><rect x="9" y="16" width="6" height="6"/><rect x="2" y="9" width="6" height="6"/><rect x="16" y="9" width="6" height="6"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>`,
+  '/sdn':            `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>`,
+  '/vpn':            `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  '/radius':         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  '/alerts':         `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6.09 6.09l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+  '/inventory':      `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+  '/logs':           `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+  '/backups':        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 7 20 3 4 3 4 7"/><path d="M20 21H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2z"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="15" x2="15" y2="15"/></svg>`,
+  '/users':          `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+}
+
+// -- Grupos dinamicos, armados desde /Permission/Menus ----------
+// El bloque "Principal" (Dashboard) no se incluye aqui: se muestra
+// siempre como item suelto arriba. El backend ya filtra qué módulos
+// devuelve según isEnable y el rol del token, así que todo lo que
+// venga en `menus[]` se muestra tal cual (no se filtra por isAssigned).
 const filteredGroups = computed(() => {
-  const slugs = permsStore.allowedSlugs
-  // Sin permisos cargados todavía → no filtrar
-  if (slugs === null) return navGroups
-
-  return navGroups
-    .map(group => ({
-      ...group,
-      items: group.items.filter(item => permsStore.canAccess(item.to)),
+  const blocks = permsStore.menuBlocks ?? []
+  return blocks
+    .filter(b => b.block !== 'Principal')
+    .map(b => ({
+      id: slugifyId(b.block),
+      label: b.block,
+      icon: BLOCK_ICONS[b.block] ?? DEFAULT_GROUP_ICON,
+      items: (b.menus ?? [])
+        .filter(m => m.slug)
+        .map(m => ({
+          to: m.slug,
+          label: m.name,
+          icon: MENU_ICONS[m.slug] ?? DEFAULT_ITEM_ICON,
+          badge: null,
+        })),
     }))
-    .filter(group => group.items.length > 0)
+    .filter(g => g.items.length > 0)
 })
 
 function isActive(to) {
   return route.path === to
 }
-
 
 </script>
 
@@ -344,6 +291,36 @@ function isActive(to) {
 .sidebar__group-divider {
   height: 1px; background: var(--sidebar-border); margin: 6px 4px;
 }
+
+/* ── Skeleton (cargando módulos) ── */
+.sidebar__skeleton {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 8px;
+}
+.sidebar__skeleton-row {
+  height: 28px; border-radius: var(--radius);
+  background: var(--sidebar-hover);
+  animation: sidebarShimmer 1.3s ease infinite;
+}
+@keyframes sidebarShimmer { 0%, 100% { opacity: .5; } 50% { opacity: 1; } }
+
+/* ── Error al cargar módulos ── */
+.sidebar__load-error { padding: 6px 8px; }
+.sidebar__load-error-text {
+  font-size: .72rem; color: var(--sidebar-text);
+  line-height: 1.5; padding: 8px;
+  background: rgba(248,113,113,.08);
+  border: 1px solid rgba(248,113,113,.2);
+  border-radius: var(--radius);
+}
+.sidebar__retry {
+  display: block; margin-top: 6px;
+  background: none; border: 1px solid var(--sidebar-border);
+  color: var(--sidebar-text-active); cursor: pointer;
+  font-size: .7rem; font-weight: 600;
+  padding: 4px 8px; border-radius: var(--radius-sm);
+}
+.sidebar__retry:hover { background: var(--sidebar-hover); }
 
 /* ── Group header ── */
 .sidebar__group-header {

@@ -114,6 +114,7 @@ import { ref, computed, onMounted, onUnmounted, h } from 'vue'
 import { useInfrastructure } from '@/modules/infrastructure/composables/useInfrastructure.js'
 import { readChartTheme } from '@/modules/main/composables/useChartTheme.js'
 import StatusDonut from '@/modules/network/components/StatusDonut.vue'
+import { useLoaderStore } from '@/stores/loader.js'
 
 const {
   summary, resources, anyLoading, lastRefresh,
@@ -158,8 +159,10 @@ const autoOn = ref(true)
 let timer = null
 const REFRESH_MS = 30000
 
+const loader = useLoaderStore()
+
 onMounted(async () => {
-  await loadAll()
+  await loader.wrap(loadAll(), 'Cargando infraestructura...')
   timer = setInterval(() => { if (autoOn.value) loadAll(true) }, REFRESH_MS)
 })
 onUnmounted(() => { if (timer) clearInterval(timer) })

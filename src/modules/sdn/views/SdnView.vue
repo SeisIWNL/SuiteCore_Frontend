@@ -231,6 +231,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useSdn } from '@/modules/sdn/composables/useSdn.js'
 import { useOnboarding } from '@/modules/sdn/composables/useOnboarding.js'
 import OnboardingPanel from '@/modules/sdn/components/OnboardingPanel.vue'
+import { useLoaderStore } from '@/stores/loader.js'
 
 const {
   health, topology, flows, mkInfo, mkIfaces,
@@ -278,8 +279,10 @@ async function refreshAll(silent = false) {
   })
 }
 
+const loader = useLoaderStore()
+
 onMounted(async () => {
-  await refreshAll()
+  await loader.wrap(refreshAll(), 'Cargando supervisión SDN...')
   timer = setInterval(() => { if (autoOn.value) refreshAll(true) }, REFRESH_MS)
 })
 onUnmounted(() => { if (timer) clearInterval(timer) })

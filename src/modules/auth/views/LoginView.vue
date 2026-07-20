@@ -4,7 +4,7 @@
 
       <!-- Logo + marca -->
       <div class="login__brand">
-        <img src="@/assets/logo.png" alt="SuiteCore" class="login__logo" />
+        <img src="@/assets/suitecore-logo.png" alt="SuiteCore" class="login__logo" />
         <div class="login__brand-text">
           <span class="login__brand-name">SuiteCore</span>
           <span class="login__brand-tag">NOC Dashboard</span>
@@ -127,18 +127,6 @@
             <span v-if="errors.password" class="field__error">{{ errors.password }}</span>
           </div>
 
-          <!-- Recordar sesión -->
-          <!-- <label class="login__remember">
-            <input
-              v-model="rememberMe"
-              v-bind="rememberMeAttrs"
-              type="checkbox"
-              class="login__checkbox"
-            />
-            <span class="login__checkbox-box" />
-            <span>Recordar sesión en este equipo</span>
-          </label> -->
-
           <!-- Submit -->
           <button
             type="submit"
@@ -215,34 +203,38 @@ const sessionExpired = computed(() => sessionStore.expiredReason === 'expired')
 /* ── Marca / Logo ── */
 .login__brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 2px;
 }
 .login__logo {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   flex-shrink: 0;
   object-fit: contain;
 }
 .login__brand-text {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  gap: 3px;
 }
 .login__brand-name {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 800;
   color: #111827;
   letter-spacing: -.3px;
   line-height: 1.15;
+  text-align: center;
 }
 .login__brand-tag {
-  font-size: .72rem;
+  font-size: .74rem;
   color: #2563eb;
   letter-spacing: .12em;
   text-transform: uppercase;
   font-weight: 700;
+  text-align: center;
 }
 
 /* ── Card ── */

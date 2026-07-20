@@ -327,6 +327,7 @@
 import { computed, onMounted, onUnmounted } from 'vue'
 import { useVpn, formatBytes, osLabel } from '@/modules/vpn/composables/useVpn.js'
 import WireguardTrafficChart from '@/modules/vpn/components/WireguardTrafficChart.vue'
+import { useLoaderStore } from '@/stores/loader.js'
 
 const {
   status, wireguard, wgStats, tailscale, policy,
@@ -344,15 +345,17 @@ const anyLoading = computed(() =>
 const fmtBytes = formatBytes
 const osName = osLabel
 
+const loader = useLoaderStore()
+
 onMounted(async () => {
-  await loadAll()
+  await loader.wrap(loadAll(), 'Cargando VPN...')
   startAutoRefresh()
 })
 onUnmounted(stopAutoRefresh)
 </script>
 
 <style scoped>
-.vpn { max-width: auto; }
+.vpn { max-width: 1200px; }
 
 /* Header */
 .vpn__head {

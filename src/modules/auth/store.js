@@ -3,24 +3,6 @@ import { ref, computed } from 'vue'
 import { authService } from '@/modules/auth/services/auth.service.js'
 import { usePermissionsStore } from '@/stores/permissions.js'
 
-// Resuelve el gidNumber del usuario desde las distintas formas en que
-// puede venir del backend (gidNumber directo, o anidado).
-function resolveGid(user) {
-  if (!user) return null
-  const gid =
-    user.gidNumber ??
-    user.gid ??
-    user.groupId ??
-    user.role ??
-    // a veces viene anidado en el primer grupo
-    user.groups?.[0]?.gidNumber ??
-    user.groups?.[0]?.id ??
-    null
-  // Normaliza: descarta cadenas vacías
-  if (gid === '' || gid == null) return null
-  return String(gid)
-}
-
 export const useAuthStore = defineStore('auth', () => {
 
   // ── Helpers para leer storage ────────────────────────────────
@@ -73,19 +55,14 @@ export const useAuthStore = defineStore('auth', () => {
     storage.setItem('auth_user',    JSON.stringify(response.user))
 
     // Log para confirmar que llegó bien
-    // console.log('[auth] login OK → user:', response.user)
+    console.log('[auth] login OK → user:', response.user)
 
-    // Carga los módulos permitidos para el rol del usuario
+    // Carga los módulos permitidos para el usuario (resuelto por el backend
+    // vía el token, sin necesidad de conocer su gidNumber)
     try {
       const perms = usePermissionsStore()
-      const gid = resolveGid(response.user)
-      // console.log('[auth] gidNumber resuelto:', gid, '← de user:', response.user)
-      //if (!gid) {
-      //  console.warn('[auth] ⚠ El usuario NO tiene gidNumber directo; intentando resolver por username...')
-      //}
-      // ensurePermissions aplica el fallback por username si hace falta
       await ensurePermissions(true)
-      // console.log('[auth] permisos cargados → slugs permitidos:', perms.allowedSlugs)
+      console.log('[auth] permisos cargados → slugs permitidos:', perms.allowedSlugs)
     } catch (err) {
       console.warn('[auth] no se pudieron cargar permisos:', err)
     }
@@ -119,49 +96,26 @@ export const useAuthStore = defineStore('auth', () => {
     if (raw) {
       try {
         user.value = JSON.parse(raw)
-        // console.log('[auth] user recuperado de storage:', user.value)
+        console.log('[auth] user recuperado de storage:', user.value)
       } catch {
-        // console.warn('[auth] auth_user en storage está corrupto → logout')
+        console.warn('[auth] auth_user en storage está corrupto → logout')
         _clearState()
       }
     } else {
       // Token existe pero no hay user → estado inconsistente → limpia
-      // console.warn('[auth] token sin user en storage → logout')
+      console.warn('[auth] token sin user en storage → logout')
       _clearState()
     }
   }
 
   // ensurePermissions — garantiza que los módulos permitidos del usuario
   // estén cargados (p. ej. tras un F5). Idempotente: no recarga si ya están.
+  // El backend resuelve el rol a partir del token, así que no hace falta
+  // averiguar el gidNumber del usuario en el front.
   async function ensurePermissions(force = false) {
     if (!user.value) return
     const perms = usePermissionsStore()
-    let gid = resolveGid(user.value)
-
-    // Fallback: si el usuario no trae gidNumber, lo descubrimos cruzando
-    // su username contra GET /Permission/Roles (que incluye users[]).
-    if (!gid) {
-      gid = await resolveGidByUsername(user.value.username)
-      // if (gid) console.log('[auth] gidNumber resuelto por username:', gid)
-    }
-
-    await perms.loadForGid(gid, force)
-  }
-
-  // Busca el gidNumber del usuario en la lista de roles, por username.
-  async function resolveGidByUsername(username) {
-    if (!username) return null
-    try {
-      const { permissionService } = await import('@/modules/users/services/permission.service.js')
-      const data = await permissionService.getRoles()
-      for (const role of data.roles ?? []) {
-        const match = (role.users ?? []).some(u => u.username === username)
-        if (match) return String(role.id)   // role.id === gidNumber
-      }
-    } catch (err) {
-      console.warn('[auth] no se pudo resolver gid por username:', err)
-    }
-    return null
+    await perms.loadMenus(force)
   }
 
   function _clearState() {

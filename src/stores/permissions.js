@@ -3,20 +3,26 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { permissionService } from '@/modules/users/services/permission.service.js'
 
-const SLUGS_KEY = 'perm_slugs'
-const GID_KEY   = 'perm_gid'
-const KNOWN_KEY = 'perm_known'
+const SLUGS_KEY  = 'perm_slugs'
+const BLOCKS_KEY = 'perm_blocks'
 
-// El Dashboard siempre es accesible para cualquier rol.
+// Rutas siempre accesibles para cualquier usuario autenticado, sin importar
+// lo que devuelva /Permission/Menus:
+// - '/dashboard': página de inicio garantizada para todos los roles.
+// Cualquier página que NO sea un módulo de negocio (ej. una futura pantalla
+// de "Ajustes de cuenta" que no dependa de RBAC) debe agregarse aquí de forma
+// explícita. Todo lo que no esté en esta lista y no venga en la respuesta del
+// backend queda BLOQUEADO — el guard es la barrera principal de acceso.
 const ALWAYS_ALLOWED = ['/dashboard']
 
 export const usePermissionsStore = defineStore('permissions', () => {
-  // Slugs que el usuario puede ver (además de los always-allowed)
+  // Slugs que el backend devolvió para este usuario en /Permission/Menus.
+  // El backend ya filtra por isEnable y por el rol del token: todo lo que
+  // aparece aquí es, por definición, lo que este usuario puede ver.
   const allowedSlugs = ref(loadJson(SLUGS_KEY))
-  // Slugs que existen en el catálogo maestro (módulos gestionados por RBAC).
-  // Un slug que NO está aquí no se filtra (no es un módulo controlado).
-  const knownSlugs   = ref(loadJson(KNOWN_KEY))
-  const loadedGid    = ref(sessionStorage.getItem(GID_KEY) || null)
+  // Estructura completa devuelta por /Permission/Menus (bloques + menús),
+  // ya ordenada por `order`. El sidebar la usa para renderizarse dinámicamente.
+  const menuBlocks   = ref(loadJson(BLOCKS_KEY))
   const loading      = ref(false)
   const error        = ref(null)
   // Marca si ya intentamos cargar (para evitar parpadeo en el guard)
@@ -36,89 +42,77 @@ export const usePermissionsStore = defineStore('permissions', () => {
   })
 
   /**
-   * Carga los menús permitidos para el gidNumber del usuario.
-   * Si ya están cargados para ese gid y no se fuerza, no vuelve a pedir.
+   * Carga los módulos/menús del usuario autenticado desde
+   * GET /Permission/Menus (el backend resuelve el rol por el token, no hace
+   * falta pasar ningún id). Si ya se cargaron y no se fuerza, no repite la
+   * llamada.
    */
-  async function loadForGid(gidNumber, force = false) {
-    if (!gidNumber) {
-      // Sin gid no podemos filtrar; dejamos el set vacío (solo dashboard)
-      allowedSlugs.value = []
-      ready.value = true
-      persist(gidNumber)
-      return
-    }
-    if (!force && loadedGid.value === String(gidNumber) && allowedSlugs.value) {
-      ready.value = true
-      return
-    }
+  async function loadMenus(force = false) {
+    if (!force && ready.value && menuBlocks.value) return
 
     loading.value = true
     error.value   = null
     try {
-      const assigned = await permissionService.getRoleMenus(gidNumber)
+      const data = await permissionService.getMenus()
+      const blocks = [...(data.menus ?? [])].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
-      // El endpoint ahora devuelve TODOS los módulos con un flag isAssigned.
-      // - allowedSlugs: solo los que tienen isAssigned === true
-      // - knownSlugs:  todos los slugs que aparecen (catálogo gestionado)
+      // No se filtra por `isAssigned` — ese campo viene fijo/no confiable.
+      // El filtrado real ya lo hizo el backend antes de responder: cada
+      // slug presente aquí es un módulo habilitado Y asignado a este rol.
       const slugs = []
-      const known = []
-      for (const block of assigned.menus ?? []) {
+      for (const block of blocks) {
         for (const m of block.menus ?? []) {
           if (!m.slug) continue
-          known.push(m.slug)
-          if (m.isAssigned === true) slugs.push(m.slug)
+          slugs.push(m.slug)
         }
       }
-      allowedSlugs.value = slugs
-      knownSlugs.value   = known
 
-      loadedGid.value = String(gidNumber)
-      persist(gidNumber)
+      menuBlocks.value   = blocks
+      allowedSlugs.value = slugs
+      persist()
     } catch (err) {
-      // En caso de error NO abrimos todo: por seguridad dejamos solo dashboard.
-      error.value = err.message ?? 'No se pudieron cargar los permisos del usuario.'
+      // En caso de error NO abrimos todo: por seguridad dejamos solo dashboard,
+      // y sin estructura de menús (el sidebar mostrará solo Dashboard + aviso).
+      error.value = err.message ?? 'No se pudieron cargar los módulos del usuario.'
       allowedSlugs.value = allowedSlugs.value ?? []
+      menuBlocks.value   = menuBlocks.value ?? []
     } finally {
       ready.value   = true
       loading.value = false
     }
   }
 
-  function persist(gidNumber) {
+  function persist() {
     sessionStorage.setItem(SLUGS_KEY, JSON.stringify(allowedSlugs.value ?? []))
-    sessionStorage.setItem(KNOWN_KEY, JSON.stringify(knownSlugs.value ?? []))
-    if (gidNumber) sessionStorage.setItem(GID_KEY, String(gidNumber))
+    sessionStorage.setItem(BLOCKS_KEY, JSON.stringify(menuBlocks.value ?? []))
   }
 
   /**
    * ¿El usuario puede ver esta ruta (slug)?
-   * - Si los permisos no se cargaron aún → permitir (fail-open en arranque).
-   * - Si el slug NO es un módulo gestionado (no está en el catálogo) → permitir.
-   * - Si es gestionado → solo si está en los permitidos (o es always-allowed).
+   * - Si los permisos no se cargaron aún → permitir (fail-open solo durante
+   *   el brevísimo instante antes de que resuelva la primera carga).
+   * - Una vez cargados: SOLO se permite si está en ALWAYS_ALLOWED o si vino
+   *   en la respuesta de /Permission/Menus para este usuario. Cualquier otra
+   *   cosa queda bloqueada (fail-closed) — el backend ya nos confirmó que
+   *   esta respuesta está correctamente filtrada por rol.
    */
   function canAccess(slug) {
     if (!slug) return true
-    if (allowedSlugs.value === null) return true        // aún sin cargar
-    if (allowedSet.value.has(slug)) return true          // permitido explícito
-    // Si el slug no es un módulo gestionado por RBAC, no lo bloqueamos
-    const known = knownSlugs.value
-    if (known && !known.includes(slug)) return true
-    return false
+    if (allowedSlugs.value === null) return true   // aún sin cargar
+    return allowedSet.value.has(slug)
   }
 
   function clear() {
     allowedSlugs.value = null
-    knownSlugs.value   = null
-    loadedGid.value    = null
+    menuBlocks.value   = null
     ready.value        = false
     error.value        = null
     sessionStorage.removeItem(SLUGS_KEY)
-    sessionStorage.removeItem(KNOWN_KEY)
-    sessionStorage.removeItem(GID_KEY)
+    sessionStorage.removeItem(BLOCKS_KEY)
   }
 
   return {
-    allowedSlugs, allowedSet, knownSlugs, loadedGid, loading, error, ready,
-    loadForGid, canAccess, clear,
+    allowedSlugs, allowedSet, menuBlocks, loading, error, ready,
+    loadMenus, canAccess, clear,
   }
 })
