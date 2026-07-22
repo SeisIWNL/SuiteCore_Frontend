@@ -1,5 +1,5 @@
 // src/modules/sdn/composables/useOnboarding.js
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { onboardingService } from '@/modules/sdn/services/onboarding.service.js'
 
 export function useOnboarding() {
@@ -108,7 +108,241 @@ export function useOnboarding() {
     readiness.value.data?.executionAvailable === true
   )
 
-  const latestScan = computed(() => status.value.data?.latestScan ?? null)
+  // ── Acciones ─────────────────────────────────────────────────
+
+  /** Extrae un mensaje legible de la respuesta cruda del SCNO (objeto o texto). */
+  function extractMessage(raw) {
+    if (raw == null) return 'Operación completada.'
+    if (typeof raw === 'string') return raw
+    return raw.message ?? raw.status ?? raw.detail ?? JSON.stringify(raw)
+  }
+
+  /**
+   * Busca hosts candidatos en la red (GET /onboarding/candidates) y
+   * actualiza la tabla de "Hosts administrados" con lo que devuelva.
+   * Devuelve la respuesta cruda para que la vista arme el mensaje del
+   * popup (cuántos hosts se encontraron).
+   */
+  async function searchHosts() {
+    candidates.value.loading = true
+    candidates.value.error = null
+    try {
+      const data = await onboardingService.getCandidates()
+      candidates.value.data = data
+      return data
+    } catch (err) {
+      candidates.value.error = err.message ?? 'No se pudo buscar hosts en la red.'
+      throw err
+    } finally {
+      candidates.value.loading = false
+    }
+  }
+
+  // ── Flujo de onboarding en 3 pasos ──────────────────────────
+  // Estado del diálogo: confirmación → progreso (con mensaje por paso) →
+  // resultado final (éxito o error). Un solo objeto reactivo controla las
+  // 3 fases para que la vista renderice un único modal.
+  const onboardFlow = reactive({
+    open: false,
+    mode: 'confirm',   // 'confirm' | 'progress' | 'result'
+    tone: 'ok',        // 'ok' | 'error' (solo aplica en mode 'result')
+    title: '',
+    message: '',
+    candidate: null,
+  })
+
+  /** Abre el modal de confirmación para un candidato puntual. */
+  function askStartOnboarding(candidate) {
+    onboardFlow.open = true
+    onboardFlow.mode = 'confirm'
+    onboardFlow.tone = 'ok'
+    onboardFlow.candidate = candidate
+    onboardFlow.title = 'Iniciar onboarding'
+    onboardFlow.message =
+      `¿Deseas iniciar el proceso de onboarding para "${candidate.name || candidate.hostname || 'este host'}"?`
+  }
+
+  function cancelOnboarding() {
+    onboardFlow.open = false
+    onboardFlow.candidate = null
+  }
+
+  function closeOnboardResult() {
+    onboardFlow.open = false
+    onboardFlow.candidate = null
+  }
+
+  /**
+   * Extrae el plan_id de la respuesta (o del error) del paso 1. El endpoint
+   * SIEMPRE responde en estado de error a propósito (no puede autoaprobarse),
+   * así que se revisa tanto la respuesta exitosa como la adjunta al error.
+   */
+  function extractPlanId(payload) {
+    return payload?.detail?.plan?.plan_id ?? payload?.plan?.plan_id ?? null
+  }
+
+  /** Corre los 3 pasos en secuencia tras la confirmación del usuario. */
+  async function confirmStartOnboarding() {
+    const candidate = onboardFlow.candidate
+    if (!candidate) return
+    const candidateId = candidate.candidate_id
+    const hostLabel = candidate.name || candidate.hostname || 'el host'
+
+    onboardFlow.mode = 'progress'
+    onboardFlow.title = 'Procesando onboarding'
+    onboardFlow.message = 'Generando el plan...'
+
+    // Paso 1: generar el planId (se ignora el "status" de este paso a propósito)
+    let planId = null
+    try {
+      const data = await onboardingService.generateOnboardPlan(candidateId)
+      planId = extractPlanId(data)
+    } catch (err) {
+      planId = extractPlanId(err.data)
+    }
+
+    if (!planId) {
+      onboardFlow.mode = 'result'
+      onboardFlow.tone = 'error'
+      onboardFlow.title = 'No se pudo generar el plan'
+      onboardFlow.message = `El servicio no devolvió un plan válido para ${hostLabel}.`
+      return
+    }
+
+    // Paso 2: aprobar el plan
+    onboardFlow.message = 'Aprobando plan...'
+    let approveData
+    try {
+      approveData = await onboardingService.approvePlan(planId)
+    } catch (err) {
+      approveData = err.data
+    }
+
+    if (approveData?.status !== 'approved') {
+      onboardFlow.mode = 'result'
+      onboardFlow.tone = 'error'
+      onboardFlow.title = `Estado: ${approveData?.status ?? 'desconocido'}`
+      onboardFlow.message = approveData?.message ?? 'No se pudo aprobar el plan de onboarding.'
+      await loadAll(true)
+      return
+    }
+
+    // Paso 3: ejecutar el plan
+    onboardFlow.message = 'Ejecutando plan de onboarding...'
+    let execData
+    try {
+      execData = await onboardingService.executePlan(planId)
+    } catch (err) {
+      execData = err.data
+    }
+
+    if (execData?.status !== 'completed') {
+      onboardFlow.mode = 'result'
+      onboardFlow.tone = 'error'
+      onboardFlow.title = `Estado: ${execData?.status ?? 'desconocido'}`
+      onboardFlow.message = execData?.message ?? execData?.reason ?? 'No se pudo ejecutar el plan de onboarding.'
+      await loadAll(true)
+      return
+    }
+
+    onboardFlow.mode = 'result'
+    onboardFlow.tone = 'ok'
+    onboardFlow.title = 'Onboarding completado'
+    onboardFlow.message = `El proceso de onboarding para ${hostLabel} se completó con éxito.`
+    await loadAll(true) // refresca candidatos/planes con el nuevo estado
+  }
+
+  // ── Flujo de retiro (decommission) ──────────────────────────
+  // Confirmación → motivo (texto libre) → progreso → resultado.
+  const decommissionFlow = reactive({
+    open: false,
+    mode: 'confirm',   // 'confirm' | 'reason' | 'progress' | 'result'
+    tone: 'ok',        // 'ok' | 'error' (solo en mode 'result')
+    title: '',
+    message: '',
+    candidate: null,
+    reason: '',
+  })
+
+  /** Busca el plan_id ya existente asociado a un candidato (el mismo con el que se onboardeó). */
+  function findPlanIdForCandidate(candidateId) {
+    const plan = planItems.value.find(p => (p.candidate_id ?? p.candidateId) === candidateId)
+    return plan?.plan_id ?? plan?.planId ?? null
+  }
+
+  function askDecommission(candidate) {
+    decommissionFlow.open = true
+    decommissionFlow.mode = 'confirm'
+    decommissionFlow.tone = 'ok'
+    decommissionFlow.candidate = candidate
+    decommissionFlow.reason = ''
+    decommissionFlow.title = 'Retirar host'
+    decommissionFlow.message =
+      `¿Deseas retirar el host "${candidate.name || candidate.hostname || 'seleccionado'}"?`
+  }
+
+  function cancelDecommission() {
+    decommissionFlow.open = false
+    decommissionFlow.candidate = null
+    decommissionFlow.reason = ''
+  }
+
+  /** El usuario confirmó "Sí" en el paso de confirmación → pasa a pedir el motivo. */
+  function proceedToDecommissionReason() {
+    decommissionFlow.mode = 'reason'
+    decommissionFlow.title = 'Motivo del retiro'
+    decommissionFlow.message = 'Indica el motivo por el que se retira este host.'
+  }
+
+  function closeDecommissionResult() {
+    decommissionFlow.open = false
+    decommissionFlow.candidate = null
+    decommissionFlow.reason = ''
+  }
+
+  /** Envía el motivo y ejecuta el retiro contra el SCNO. */
+  async function submitDecommission() {
+    const candidate = decommissionFlow.candidate
+    if (!candidate) return
+    const candidateId = candidate.candidate_id
+    const hostLabel = candidate.name || candidate.hostname || 'el host'
+    const reason = decommissionFlow.reason?.trim()
+
+    if (!reason) return // el botón ya está deshabilitado sin motivo, por seguridad
+
+    const planId = findPlanIdForCandidate(candidateId)
+    if (!planId) {
+      decommissionFlow.mode = 'result'
+      decommissionFlow.tone = 'error'
+      decommissionFlow.title = 'No se encontró el plan'
+      decommissionFlow.message =
+        `No se encontró un plan asociado a ${hostLabel}. Actualiza la lista y vuelve a intentar.`
+      return
+    }
+
+    decommissionFlow.mode = 'progress'
+    decommissionFlow.title = 'Procesando retiro'
+    decommissionFlow.message = 'Retirando host...'
+
+    let data
+    try {
+      data = await onboardingService.decommission(planId, candidateId, reason)
+    } catch (err) {
+      data = err.data
+    }
+
+    decommissionFlow.mode = 'result'
+    if (data?.status === 'completed') {
+      decommissionFlow.tone = 'ok'
+      decommissionFlow.title = 'Retiro completado'
+      decommissionFlow.message = data?.message ?? `${hostLabel} fue retirado correctamente.`
+    } else {
+      decommissionFlow.tone = 'error'
+      decommissionFlow.title = `Estado: ${data?.status ?? 'desconocido'}`
+      decommissionFlow.message = data?.message ?? 'No se pudo completar el retiro del host.'
+    }
+    await loadAll(true) // refresca candidatos/planes con el nuevo estado
+  }
 
   return {
     status, candidates, plans, readiness, executions,
@@ -116,8 +350,14 @@ export function useOnboarding() {
     candidateItems, candidateTotal, stageOf, lifecycle,
     planItems, planTotal, plansByStatus,
     executionItems, executionTotal, executionsByOperation,
-    isExecutionReady, latestScan,
+    isExecutionReady,
     loadAll,
+    // Acciones
+    searchHosts,
+    onboardFlow, askStartOnboarding, cancelOnboarding,
+    confirmStartOnboarding, closeOnboardResult,
+    decommissionFlow, askDecommission, cancelDecommission,
+    proceedToDecommissionReason, submitDecommission, closeDecommissionResult,
   }
 }
 

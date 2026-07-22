@@ -1,5 +1,6 @@
 <template>
   <AppLoader />
+  <AppToast />
   <SessionBanner />
   <RouterView />
 </template>
@@ -10,6 +11,7 @@ import { RouterView } from 'vue-router'
 import { useAuthStore }       from '@/modules/auth/store.js'
 import { useSessionWatcher }  from '@/composables/useSessionWatcher.js'
 import AppLoader    from '@/components/ui/AppLoader.vue'
+import AppToast     from '@/components/ui/AppToast.vue'
 import SessionBanner from '@/components/ui/SessionBanner.vue'
 
 const authStore = useAuthStore()

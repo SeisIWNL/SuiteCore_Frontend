@@ -107,9 +107,7 @@ export function useUserActions(onChanged, getRoles) {
 
   // ── Guardar (crear o editar) ───────────────────────────────
   async function submitForm() {
-    // console.log('[users] submitForm() llamado — mode:', formModal.mode, 'form:', JSON.parse(JSON.stringify(formModal.form)))
     if (!validate()) {
-      console.warn('[users] validación falló:', JSON.parse(JSON.stringify(formModal.errors)))
       return
     }
     saving.value = true
@@ -125,7 +123,6 @@ export function useUserActions(onChanged, getRoles) {
           password: f.password,
           gidNumber: String(f.gidNumber),
         }
-        // console.log('[users] POST /ldap/users payload:', payload)
         await usersService.createUser(payload)
       } else {
         const payload = {
@@ -133,19 +130,11 @@ export function useUserActions(onChanged, getRoles) {
           lastName: f.lastName?.trim() ?? '',
           gidNumber: String(f.gidNumber),
         }
-        // console.log('[users] PUT /ldap/users/' + formModal.username + ' payload:', payload)
         await usersService.updateUser(formModal.username, payload)
       }
       formModal.open = false
       await onChanged?.()
     } catch (err) {
-      // Diagnóstico: imprime el detalle real del backend en consola
-      console.error('[users] error al guardar usuario:', {
-        status: err?.status,
-        data: err?.data,
-        message: err?.message,
-        err,
-      })
       error.value = extractError(err) || 'No se pudo guardar el usuario.'
     } finally {
       saving.value = false

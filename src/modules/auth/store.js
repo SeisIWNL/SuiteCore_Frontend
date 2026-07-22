@@ -54,17 +54,12 @@ export const useAuthStore = defineStore('auth', () => {
     storage.setItem('auth_expires', response.expiresAt)
     storage.setItem('auth_user',    JSON.stringify(response.user))
 
-    // Log para confirmar que llegó bien
-    console.log('[auth] login OK → user:', response.user)
-
     // Carga los módulos permitidos para el usuario (resuelto por el backend
     // vía el token, sin necesidad de conocer su gidNumber)
     try {
-      const perms = usePermissionsStore()
       await ensurePermissions(true)
-      console.log('[auth] permisos cargados → slugs permitidos:', perms.allowedSlugs)
-    } catch (err) {
-      console.warn('[auth] no se pudieron cargar permisos:', err)
+    } catch {
+      /* silent */
     }
   }
 
@@ -83,7 +78,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Token expirado → limpia
     if (expiresAt.value && new Date() >= new Date(expiresAt.value)) {
-      console.log('[auth] token expirado → logout')
       _clearState()
       return
     }
@@ -96,14 +90,11 @@ export const useAuthStore = defineStore('auth', () => {
     if (raw) {
       try {
         user.value = JSON.parse(raw)
-        console.log('[auth] user recuperado de storage:', user.value)
       } catch {
-        console.warn('[auth] auth_user en storage está corrupto → logout')
         _clearState()
       }
     } else {
       // Token existe pero no hay user → estado inconsistente → limpia
-      console.warn('[auth] token sin user en storage → logout')
       _clearState()
     }
   }

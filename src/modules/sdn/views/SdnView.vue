@@ -122,18 +122,19 @@
       :execution-total="executionTotal"
       :executions-by-operation="executionsByOperation"
       :is-execution-ready="isExecutionReady"
-      :latest-scan="latestScan"
       :stage-of="stageOf"
-      :scan-local="scanLocal"
-      :scan-tailscale="scanTailscale"
-      :run-local-scan="runLocalScan"
-      :run-tailscale-scan="runTailscaleScan"
-      :has-plan-for-candidate="hasPlanForCandidate"
-      :generate-plan="generatePlan"
-      :candidate-action-state="candidateActionState"
-      :plan-is-executable="planIsExecutable"
-      :execute-plan-action="executePlanAction"
-      :execute-action-state="executeActionState"
+      :search-hosts="searchHosts"
+      :onboard-flow="onboardFlow"
+      :ask-start-onboarding="askStartOnboarding"
+      :cancel-onboarding="cancelOnboarding"
+      :confirm-start-onboarding="confirmStartOnboarding"
+      :close-onboard-result="closeOnboardResult"
+      :decommission-flow="decommissionFlow"
+      :ask-decommission="askDecommission"
+      :cancel-decommission="cancelDecommission"
+      :proceed-to-decommission-reason="proceedToDecommissionReason"
+      :submit-decommission="submitDecommission"
+      :close-decommission-result="closeDecommissionResult"
     />
 
     <!-- ══════ MikroTik + interfaces ══════ -->
@@ -189,7 +190,7 @@
     </div>
 
     <!-- ══════ Acciones ══════ -->
-    <div class="sdn__two">
+    <div class="sdn__two sdn__two--single">
       <div class="panel">
         <div class="panel__head"><span class="panel__title">Seguridad SDN</span></div>
         <div class="act">
@@ -203,21 +204,6 @@
           <div v-else-if="security.message" class="act__msg"
             :class="security.messageType === 'error' ? 'act__msg--err' : 'act__msg--ok'">
             {{ security.message }}
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel__head"><span class="panel__title">Automatización SDN</span></div>
-        <div class="act">
-          <p class="act__hint">Ejecuta una acción de automatización registrada en el controlador.</p>
-          <div class="act__form">
-            <input v-model="automation.action" type="text" class="act__input" placeholder="nombre_de_la_accion" />
-            <button class="act__btn act__btn--accent" :disabled="automation.loading" @click="runAutomation()">Ejecutar</button>
-          </div>
-          <div v-if="automation.message" class="act__msg"
-            :class="automation.messageType === 'error' ? 'act__msg--err' : 'act__msg--ok'">
-            {{ automation.message }}
           </div>
         </div>
       </div>
@@ -236,7 +222,7 @@ import { useLoaderStore } from '@/stores/loader.js'
 const {
   health, topology, flows, mkInfo, mkIfaces,
   anyLoading, isOnline, memoryPct, interfaces, flowCount,
-  security, automation, runBlockIp, runAutomation,
+  security, runBlockIp,
   loadAll: loadSdn,
 } = useSdn()
 
@@ -247,11 +233,13 @@ const {
   candidateItems, candidateTotal, stageOf, lifecycle,
   planItems, planTotal,
   executionTotal, executionsByOperation,
-  isExecutionReady, latestScan,
+  isExecutionReady,
   loadAll: loadOnb,
-  scanLocal, scanTailscale, runLocalScan, runTailscaleScan,
-  hasPlanForCandidate, generatePlan, candidateActionState,
-  planIsExecutable, executePlanAction, executeActionState,
+  searchHosts,
+  onboardFlow, askStartOnboarding, cancelOnboarding,
+  confirmStartOnboarding, closeOnboardResult,
+  decommissionFlow, askDecommission, cancelDecommission,
+  proceedToDecommissionReason, submitDecommission, closeDecommissionResult,
 } = useOnboarding()
 
 const busy = computed(() => anyLoading.value || onbLoading.value)
@@ -327,6 +315,8 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 
 /* Paneles genéricos */
 .sdn__two { display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; }
+.sdn__two--single { grid-template-columns: 1fr; }
+.sdn__two--single .panel { max-width: 480px; }
 .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
 .panel__head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .panel__title { font-family: var(--font-display); font-size: .8rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; }

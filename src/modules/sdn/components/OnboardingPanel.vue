@@ -1,70 +1,6 @@
 <template>
   <div class="onb">
 
-    <!-- Acciones rápidas -->
-    <div class="panel">
-      <div class="panel__head"><span class="panel__title">Acciones rápidas</span></div>
-      <div class="qa">
-        <button class="qa__btn qa__btn--blue" :disabled="scanLocal.loading" @click="runLocalScan">
-          <span class="qa__ico" :class="{ 'qa__ico--spin': scanLocal.loading }">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-            </svg>
-          </span>
-          <span class="qa__title">Escanear red local</span>
-          <span class="qa__cap">Descubrimiento MikroTik</span>
-        </button>
-
-        <button class="qa__btn qa__btn--blue" :disabled="scanTailscale.loading" @click="runTailscaleScan">
-          <span class="qa__ico" :class="{ 'qa__ico--spin': scanTailscale.loading }">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/>
-            </svg>
-          </span>
-          <span class="qa__title">Escanear Tailscale</span>
-          <span class="qa__cap">Descubrimiento en malla</span>
-        </button>
-
-        <a href="#onb-plans" class="qa__btn qa__btn--purple">
-          <span class="qa__ico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-            </svg>
-          </span>
-          <span class="qa__title">Ver planes</span>
-          <span class="qa__cap">Pendientes y aprobados</span>
-        </a>
-
-        <button class="qa__btn qa__btn--disabled" disabled title="Aún no disponible: el backend no expone un endpoint de retiro.">
-          <span class="qa__ico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-            </svg>
-          </span>
-          <span class="qa__title">Preview retiro</span>
-          <span class="qa__cap">Próximamente</span>
-        </button>
-
-        <button class="qa__btn qa__btn--disabled" disabled title="Aún no disponible: el backend no expone un endpoint de retiro.">
-          <span class="qa__ico">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-            </svg>
-          </span>
-          <span class="qa__title">Ejecutar retiro</span>
-          <span class="qa__cap">Próximamente</span>
-        </button>
-      </div>
-
-      <!-- Resultados de las acciones de escaneo -->
-      <div v-if="scanLocal.message || scanLocal.error" class="qa__msg" :class="scanLocal.error ? 'qa__msg--err' : 'qa__msg--ok'">
-        <strong>Descubrimiento local:</strong> {{ scanLocal.error || scanLocal.message }}
-      </div>
-      <div v-if="scanTailscale.message || scanTailscale.error" class="qa__msg" :class="scanTailscale.error ? 'qa__msg--err' : 'qa__msg--ok'">
-        <strong>Descubrimiento Tailscale:</strong> {{ scanTailscale.error || scanTailscale.message }}
-      </div>
-    </div>
-
     <div class="onb__top">
       <div class="panel">
         <div class="panel__head">
@@ -98,14 +34,28 @@
     <div class="panel">
       <div class="panel__head">
         <span class="panel__title">Hosts administrados</span>
-        <span class="panel__hint">{{ candidateItems.length }} de {{ candidateTotal }}</span>
+        <div class="panel__head-right">
+          <span class="panel__hint">{{ candidateItems.length }} de {{ candidateTotal }}</span>
+          <button
+            class="search-btn"
+            :disabled="searching"
+            title="Buscar hosts en la red"
+            @click="onSearchHosts"
+          >
+            <svg v-if="!searching" width="15" height="15" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <span v-else class="search-btn__spinner" />
+          </button>
+        </div>
       </div>
       <div v-if="candidates.loading" class="panel__pad">
         <div v-for="i in 3" :key="i" class="sk sk--row" />
       </div>
       <div v-else-if="candidates.error" class="panel__err">{{ candidates.error }}</div>
       <div v-else-if="!candidateItems.length" class="panel__empty">
-        No hay candidatos detectados. Ejecuta un descubrimiento para escanear la red.
+        No hay candidatos detectados. Usa el buscador para escanear la red.
       </div>
       <div v-else class="tbl-wrap">
         <table class="tbl">
@@ -120,36 +70,196 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="c in candidateItems" :key="c.candidateId" class="tbl__tr">
+            <tr v-for="c in candidateItems" :key="c.candidate_id" class="tbl__tr">
               <td class="tbl__td"><span class="strong">{{ c.name || c.hostname || '—' }}</span></td>
-              <td class="tbl__td"><code class="mono">{{ c.managementIp || '—' }}</code></td>
-              <td class="tbl__td">{{ c.operatingSystem || c.discoveredRole || '—' }}</td>
+              <td class="tbl__td"><code class="mono">{{ c.management_ip || '—' }}</code></td>
+              <td class="tbl__td">{{ c.operating_system || c.discovered_role || '—' }}</td>
               <td class="tbl__td">
                 <span class="badge" :class="stageClass(stageOf(c))">
                   {{ stageLabel(stageOf(c)) }}
                 </span>
               </td>
-              <td class="tbl__td"><span class="muted">{{ fmtDate(c.lastSeenAt) }}</span></td>
+              <td class="tbl__td"><span class="muted">{{ fmtDate(c.last_seen_at) }}</span></td>
               <td class="tbl__td">
                 <button
-                  v-if="stageOf(c) === 'elegibles' && !hasPlanForCandidate(c.candidateId)"
-                  class="row-btn"
-                  :disabled="candidateActionState(c.candidateId).loading"
-                  @click="generatePlan(c.candidateId)"
+                  v-if="stageOf(c) === 'onboarded'"
+                  class="row-btn row-btn--danger"
+                  @click="askDecommission(c)"
                 >
-                  {{ candidateActionState(c.candidateId).loading ? 'Generando…' : 'Generar plan' }}
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  </svg>
+                  Retirar
                 </button>
-                <span v-else-if="hasPlanForCandidate(c.candidateId)" class="row-note">Plan generado</span>
-                <span v-else class="row-note row-note--muted">—</span>
-                <div v-if="candidateActionState(c.candidateId).error" class="row-err">
-                  {{ candidateActionState(c.candidateId).error }}
-                </div>
+                <button
+                  v-else
+                  class="row-btn row-btn--onboard"
+                  @click="askStartOnboarding(c)"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Generar onboarding
+                </button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
+
+    <!-- Resultado de la búsqueda de hosts -->
+    <Teleport to="body">
+      <div v-if="searchModal.open" class="modal-backdrop" @click.self="searchModal.open = false">
+        <div class="modal">
+          <div class="modal__icon" :class="searchModal.tone === 'ok' ? 'modal__icon--ok' : 'modal__icon--muted'">
+            <svg v-if="searchModal.tone === 'ok'" width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="modal__title">{{ searchModal.title }}</div>
+          <div class="modal__msg">{{ searchModal.message }}</div>
+          <button class="modal__ok" @click="searchModal.open = false">OK</button>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Flujo de onboarding: confirmación → progreso → resultado -->
+    <Teleport to="body">
+      <div v-if="onboardFlow.open" class="modal-backdrop" @click.self="onModalBackdropClick">
+        <div class="modal">
+
+          <!-- Confirmación -->
+          <template v-if="onboardFlow.mode === 'confirm'">
+            <div class="modal__icon modal__icon--muted">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </div>
+            <div class="modal__title">{{ onboardFlow.title }}</div>
+            <div class="modal__msg">{{ onboardFlow.message }}</div>
+            <div class="modal__actions">
+              <button class="modal__btn modal__btn--ghost" @click="cancelOnboarding">No</button>
+              <button class="modal__btn modal__btn--accent" @click="confirmStartOnboarding">Sí</button>
+            </div>
+          </template>
+
+          <!-- Progreso (no se puede cerrar) -->
+          <template v-else-if="onboardFlow.mode === 'progress'">
+            <div class="modal__spinner" />
+            <div class="modal__title">{{ onboardFlow.title }}</div>
+            <div class="modal__msg">{{ onboardFlow.message }}</div>
+          </template>
+
+          <!-- Resultado final -->
+          <template v-else>
+            <div class="modal__icon" :class="onboardFlow.tone === 'ok' ? 'modal__icon--ok' : 'modal__icon--error'">
+              <svg v-if="onboardFlow.tone === 'ok'" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="modal__title">{{ onboardFlow.title }}</div>
+            <div class="modal__msg">{{ onboardFlow.message }}</div>
+            <button class="modal__ok" @click="closeOnboardResult">OK</button>
+          </template>
+
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Flujo de retiro: confirmación → motivo → progreso → resultado -->
+    <Teleport to="body">
+      <div v-if="decommissionFlow.open" class="modal-backdrop" @click.self="onDecommissionBackdropClick">
+        <div class="modal">
+
+          <!-- Confirmación -->
+          <template v-if="decommissionFlow.mode === 'confirm'">
+            <div class="modal__icon modal__icon--danger-soft">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="modal__title">{{ decommissionFlow.title }}</div>
+            <div class="modal__msg">{{ decommissionFlow.message }}</div>
+            <div class="modal__actions">
+              <button class="modal__btn modal__btn--ghost" @click="cancelDecommission">No</button>
+              <button class="modal__btn modal__btn--danger" @click="proceedToDecommissionReason">Sí</button>
+            </div>
+          </template>
+
+          <!-- Motivo del retiro -->
+          <template v-else-if="decommissionFlow.mode === 'reason'">
+            <div class="modal__icon modal__icon--danger-soft">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
+            <div class="modal__title">{{ decommissionFlow.title }}</div>
+            <div class="modal__msg">{{ decommissionFlow.message }}</div>
+            <textarea
+              v-model="decommissionFlow.reason"
+              class="modal__textarea"
+              rows="3"
+              placeholder="Ej. Reemplazo de equipo, fin de vida útil, migración..."
+            />
+            <div class="modal__actions">
+              <button class="modal__btn modal__btn--ghost" @click="cancelDecommission">Cancelar</button>
+              <button
+                class="modal__btn modal__btn--danger"
+                :disabled="!decommissionFlow.reason?.trim()"
+                @click="submitDecommission"
+              >
+                Confirmar retiro
+              </button>
+            </div>
+          </template>
+
+          <!-- Progreso (no se puede cerrar) -->
+          <template v-else-if="decommissionFlow.mode === 'progress'">
+            <div class="modal__spinner" />
+            <div class="modal__title">{{ decommissionFlow.title }}</div>
+            <div class="modal__msg">{{ decommissionFlow.message }}</div>
+          </template>
+
+          <!-- Resultado final -->
+          <template v-else>
+            <div class="modal__icon" :class="decommissionFlow.tone === 'ok' ? 'modal__icon--ok' : 'modal__icon--error'">
+              <svg v-if="decommissionFlow.tone === 'ok'" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="modal__title">{{ decommissionFlow.title }}</div>
+            <div class="modal__msg">{{ decommissionFlow.message }}</div>
+            <button class="modal__ok" @click="closeDecommissionResult">OK</button>
+          </template>
+
+        </div>
+      </div>
+    </Teleport>
 
     <div class="panel" id="onb-plans">
       <div class="panel__head">
@@ -173,44 +283,29 @@
               <th class="tbl__th">Solicitado por</th>
               <th class="tbl__th">Pasos</th>
               <th class="tbl__th">Creado</th>
-              <th class="tbl__th">Acción</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in planItems" :key="p.planId" class="tbl__tr">
-              <td class="tbl__td"><code class="mono">{{ shortId(p.planId) }}</code></td>
+            <tr v-for="p in planItems" :key="p.plan_id" class="tbl__tr">
+              <td class="tbl__td"><code class="mono">{{ shortId(p.plan_id) }}</code></td>
               <td class="tbl__td">
                 <span class="badge" :class="planStatusClass(p.status)">{{ p.status || '—' }}</span>
               </td>
               <td class="tbl__td">
-                <span class="risk" :class="riskClass(p.riskLevel)">{{ p.riskLevel || '—' }}</span>
+                <span class="risk" :class="riskClass(p.risk_level)">{{ p.risk_level || '—' }}</span>
               </td>
-              <td class="tbl__td">{{ p.requestedBy || '—' }}</td>
+              <td class="tbl__td">{{ p.requested_by || '—' }}</td>
               <td class="tbl__td">
                 <span class="count-badge">{{ p.plan?.steps?.length ?? 0 }}</span>
               </td>
-              <td class="tbl__td"><span class="muted">{{ fmtDate(p.createdAt) }}</span></td>
-              <td class="tbl__td">
-                <button
-                  v-if="planIsExecutable(p.status)"
-                  class="row-btn row-btn--accent"
-                  :disabled="executeActionState(p.planId).loading"
-                  @click="executePlanAction(p.planId)"
-                >
-                  {{ executeActionState(p.planId).loading ? 'Ejecutando…' : 'Ejecutar' }}
-                </button>
-                <span v-else class="row-note row-note--muted">Ejecutado</span>
-                <div v-if="executeActionState(p.planId).error" class="row-err">
-                  {{ executeActionState(p.planId).error }}
-                </div>
-              </td>
+              <td class="tbl__td"><span class="muted">{{ fmtDate(p.created_at) }}</span></td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div class="onb__bottom">
+    <div class="onb__bottom onb__bottom--single">
       <div class="panel">
         <div class="panel__head"><span class="panel__title">Salud del sistema de onboarding</span></div>
         <div v-if="status.loading || readiness.loading" class="panel__pad">
@@ -247,32 +342,13 @@
           </div>
         </div>
       </div>
-
-      <div class="panel">
-        <div class="panel__head"><span class="panel__title">Último escaneo</span></div>
-        <div v-if="status.loading" class="panel__pad">
-          <div v-for="i in 4" :key="i" class="sk sk--row" />
-        </div>
-        <div v-else-if="!latestScan" class="panel__empty">Aún no se ha ejecutado un escaneo</div>
-        <div v-else class="scan">
-          <div class="scan__row"><span>Origen</span><strong>{{ latestScan.source || '—' }}</strong></div>
-          <div class="scan__row"><span>Solicitado por</span><strong>{{ latestScan.requestedBy || '—' }}</strong></div>
-          <div class="scan__row"><span>Fecha</span><strong>{{ fmtDate(latestScan.createdAt) }}</strong></div>
-          <div class="scan__grid">
-            <div class="scan__chip"><span class="scan__num">{{ latestScan.totalSeen ?? 0 }}</span><span class="scan__lbl">Vistos</span></div>
-            <div class="scan__chip"><span class="scan__num scan__num--ok">{{ latestScan.eligibleCount ?? 0 }}</span><span class="scan__lbl">Elegibles</span></div>
-            <div class="scan__chip"><span class="scan__num">{{ latestScan.knownCount ?? 0 }}</span><span class="scan__lbl">Conocidos</span></div>
-            <div class="scan__chip"><span class="scan__num scan__num--muted">{{ latestScan.ignoredCount ?? 0 }}</span><span class="scan__lbl">Ignorados</span></div>
-          </div>
-        </div>
-      </div>
     </div>
 
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { formatDateTime } from '@/modules/sdn/composables/useOnboarding.js'
 import { readChartTheme } from '@/modules/main/composables/useChartTheme.js'
 import StatusDonut from '@/modules/network/components/StatusDonut.vue'
@@ -292,22 +368,66 @@ const props = defineProps({
   executionTotal: { type: Number, default: 0 },
   executionsByOperation: { type: Object, default: () => ({}) },
   isExecutionReady: { type: Boolean, default: false },
-  latestScan:     { type: Object, default: null },
   stageOf:        { type: Function, required: true },
-  // Acciones (POST)
-  scanLocal:            { type: Object,   default: () => ({ loading: false, error: null, message: null }) },
-  scanTailscale:        { type: Object,   default: () => ({ loading: false, error: null, message: null }) },
-  runLocalScan:         { type: Function, default: () => () => {} },
-  runTailscaleScan:     { type: Function, default: () => () => {} },
-  hasPlanForCandidate:  { type: Function, default: () => () => false },
-  generatePlan:         { type: Function, default: () => () => {} },
-  candidateActionState: { type: Function, default: () => () => ({ loading: false, error: null, message: null }) },
-  planIsExecutable:     { type: Function, default: () => () => true },
-  executePlanAction:    { type: Function, default: () => () => {} },
-  executeActionState:   { type: Function, default: () => () => ({ loading: false, error: null, message: null }) },
+  // Acciones
+  searchHosts:            { type: Function, default: () => async () => ({ items: [] }) },
+  onboardFlow:            { type: Object,   default: () => ({ open: false, mode: 'confirm', tone: 'ok', title: '', message: '', candidate: null }) },
+  askStartOnboarding:     { type: Function, default: () => () => {} },
+  cancelOnboarding:       { type: Function, default: () => () => {} },
+  confirmStartOnboarding: { type: Function, default: () => () => {} },
+  closeOnboardResult:     { type: Function, default: () => () => {} },
+  decommissionFlow:            { type: Object,   default: () => ({ open: false, mode: 'confirm', tone: 'ok', title: '', message: '', candidate: null, reason: '' }) },
+  askDecommission:              { type: Function, default: () => () => {} },
+  cancelDecommission:           { type: Function, default: () => () => {} },
+  proceedToDecommissionReason:  { type: Function, default: () => () => {} },
+  submitDecommission:           { type: Function, default: () => () => {} },
+  closeDecommissionResult:      { type: Function, default: () => () => {} },
 })
 
 const fmtDate = formatDateTime
+
+// El backdrop solo cierra el modal en confirmación (cancela) o resultado
+// (cierra). Mientras está en progreso, no se puede interrumpir haciendo clic afuera.
+function onModalBackdropClick() {
+  if (props.onboardFlow.mode === 'confirm') props.cancelOnboarding()
+  else if (props.onboardFlow.mode === 'result') props.closeOnboardResult()
+}
+
+// El backdrop cancela en confirmación/motivo, y cierra en resultado. En
+// progreso no se puede interrumpir haciendo clic afuera.
+function onDecommissionBackdropClick() {
+  const mode = props.decommissionFlow.mode
+  if (mode === 'confirm' || mode === 'reason') props.cancelDecommission()
+  else if (mode === 'result') props.closeDecommissionResult()
+}
+
+// ── Buscar hosts en la red (GET /onboarding/candidates) ────────
+const searching = ref(false)
+const searchModal = reactive({ open: false, tone: 'ok', title: '', message: '' })
+
+async function onSearchHosts() {
+  searching.value = true
+  try {
+    const data = await props.searchHosts()
+    const count = data?.items?.length ?? data?.count ?? 0
+    if (count === 0) {
+      searchModal.tone = 'muted'
+      searchModal.title = 'Sin hosts disponibles'
+      searchModal.message = 'No hay hosts disponibles para realizar el onboarding.'
+    } else {
+      searchModal.tone = 'ok'
+      searchModal.title = 'Hosts encontrados'
+      searchModal.message = `Se han encontrado ${count} host${count === 1 ? '' : 's'} disponibles para el proceso de onboarding.`
+    }
+  } catch (err) {
+    searchModal.tone = 'muted'
+    searchModal.title = 'Error al buscar'
+    searchModal.message = err?.message ?? 'No se pudo completar la búsqueda de hosts.'
+  } finally {
+    searching.value = false
+    searchModal.open = true
+  }
+}
 
 const lifecycleSegments = computed(() => {
   const theme = readChartTheme()
@@ -368,6 +488,8 @@ function shortId(id) {
 .onb { display: flex; flex-direction: column; gap: 14px; }
 .onb__top { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; }
 .onb__bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.onb__bottom--single { grid-template-columns: 1fr; }
+.onb__bottom--single .panel { max-width: 480px; }
 
 .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
 .panel__head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
@@ -419,50 +541,90 @@ function shortId(id) {
 .health__tag--warn { background: var(--warning-muted); color: var(--warning); }
 .health__tag--muted { background: var(--bg-3); color: var(--text-3); }
 
-.scan { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
-.scan__row { display: flex; align-items: center; justify-content: space-between; font-size: .8rem; color: var(--text-2); }
-.scan__row strong { color: var(--text-1); font-weight: 600; }
-.scan__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
-.scan__chip { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px 6px; text-align: center; }
-.scan__num { display: block; font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; color: var(--text-1); }
-.scan__num--ok { color: var(--success); }
-.scan__num--muted { color: var(--text-3); }
-.scan__lbl { font-size: .62rem; color: var(--text-3); }
-
 @media (max-width: 900px) {
   .onb__top, .onb__bottom { grid-template-columns: 1fr; }
 }
 
-/* Acciones rápidas */
-.qa { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; padding: 16px; }
-.qa__btn {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
-  padding: 12px; border-radius: var(--radius); border: 1px solid var(--border);
-  background: var(--bg-2); cursor: pointer; text-decoration: none;
-  font-family: var(--font-sans); transition: background .12s, border-color .12s, opacity .12s;
+/* Cabecera de panel con acciones a la derecha */
+.panel__head-right { display: flex; align-items: center; gap: 10px; }
+
+/* Botón de búsqueda de hosts */
+.search-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; flex-shrink: 0;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text-2);
+  cursor: pointer; transition: background .12s, color .12s;
 }
-.qa__btn:hover:not(:disabled) { background: var(--bg-hover); }
-.qa__btn:disabled { opacity: .55; cursor: not-allowed; }
-.qa__btn--blue { border-color: color-mix(in srgb, var(--blue) 30%, var(--border)); }
-.qa__btn--blue .qa__ico { color: var(--blue); }
-.qa__btn--purple { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
-.qa__btn--purple .qa__ico { color: var(--accent); }
-.qa__btn--disabled { opacity: .5; cursor: not-allowed; }
-.qa__ico { display: flex; }
-.qa__ico--spin svg { animation: spin .8s linear infinite; }
+.search-btn:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-1); }
+.search-btn:disabled { opacity: .6; cursor: not-allowed; }
+.search-btn__spinner {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  animation: spin .7s linear infinite;
+}
 @keyframes spin { to { transform: rotate(360deg); } }
-.qa__title { font-size: .82rem; font-weight: 700; color: var(--text-1); }
-.qa__cap { font-size: .68rem; color: var(--text-3); }
 
-.qa__msg {
-  margin: 0 16px 14px; padding: 9px 12px; border-radius: var(--radius);
-  font-size: .78rem;
+/* Modal de resultado de búsqueda */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
 }
-.qa__msg--ok { background: var(--success-muted); color: var(--success); }
-.qa__msg--err { background: var(--danger-muted); color: var(--danger); }
+.modal {
+  width: 100%; max-width: 360px;
+  background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 26px 22px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.4);
+}
+.modal__icon {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+.modal__icon--ok { background: var(--success-muted); color: var(--success); }
+.modal__icon--muted { background: var(--bg-3); color: var(--text-3); }
+.modal__icon--error { background: var(--danger-muted); color: var(--danger); }
+.modal__icon--danger-soft { background: var(--danger-muted); color: var(--danger); }
+.modal__title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--text-1); }
+.modal__msg { font-size: .84rem; color: var(--text-3); line-height: 1.5; }
+.modal__ok {
+  margin-top: 8px; padding: 8px 28px;
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius); font-family: var(--font-sans);
+  font-size: .82rem; font-weight: 700; cursor: pointer;
+}
+.modal__ok:hover { filter: brightness(1.1); }
+.modal__actions { display: flex; gap: 10px; margin-top: 10px; width: 100%; }
+.modal__btn {
+  flex: 1; padding: 9px 0; border-radius: var(--radius); border: 1px solid transparent;
+  font-family: var(--font-sans); font-size: .82rem; font-weight: 700; cursor: pointer;
+}
+.modal__btn--ghost { background: var(--bg-2); border-color: var(--border); color: var(--text-2); }
+.modal__btn--ghost:hover { background: var(--bg-hover); }
+.modal__btn--accent { background: var(--accent); color: #fff; }
+.modal__btn--accent:hover { filter: brightness(1.1); }
+.modal__btn--danger { background: var(--danger); color: #fff; }
+.modal__btn--danger:hover:not(:disabled) { filter: brightness(1.1); }
+.modal__btn--danger:disabled { opacity: .5; cursor: not-allowed; }
+.modal__textarea {
+  width: 100%; margin-top: 4px; padding: 9px 11px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text-1);
+  font-family: var(--font-sans); font-size: .82rem; resize: vertical;
+  outline: none;
+}
+.modal__textarea:focus { border-color: var(--accent); box-shadow: var(--shadow-focus); }
+.modal__textarea::placeholder { color: var(--text-3); }
+.modal__spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid var(--border); border-top-color: var(--accent);
+  animation: spin .7s linear infinite; margin-bottom: 4px;
+}
 
-/* Botones de acción por fila */
-.row-btn {
+.row-btn { display: inline-flex; align-items: center; gap: 5px;
   padding: 5px 11px; border-radius: var(--radius); border: 1px solid transparent;
   background: var(--accent-muted); color: var(--accent);
   font-family: var(--font-sans); font-size: .72rem; font-weight: 700; cursor: pointer;
@@ -471,6 +633,8 @@ function shortId(id) {
 .row-btn:hover:not(:disabled) { filter: brightness(1.1); }
 .row-btn:disabled { opacity: .6; cursor: not-allowed; }
 .row-btn--accent { background: var(--success-muted); color: var(--success); }
+.row-btn--onboard { background: var(--success-muted); color: var(--success); }
+.row-btn--danger { background: var(--danger-muted); color: var(--danger); }
 .row-note { font-size: .74rem; color: var(--text-3); }
 .row-note--muted { color: var(--text-3); }
 .row-err { font-size: .68rem; color: var(--danger); margin-top: 4px; max-width: 160px; }

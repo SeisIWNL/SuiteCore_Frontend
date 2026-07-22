@@ -103,9 +103,50 @@ export const onboardingService = {
     return data
   },
 
-  /** Ejecuta un plan de onboarding ya generado. */
+  /**
+   * Ejecuta un plan de onboarding ya generado. Este paso integra en cadena
+   * NetBox, LibreNMS, Oxidized, Graylog, auditoría y notificaciones — puede
+   * tardar más que el timeout por defecto de la app, así que se le da un
+   * margen más amplio (60s) para evitar que el frontend marque error por
+   * timeout mientras el backend sigue trabajando y termina bien igual.
+   */
   async executePlan(planId) {
-    const { data } = await http.post(`${BASE}/plans/${encodeURIComponent(planId)}/execute`)
+    const { data } = await http.post(`${BASE}/plans/${encodeURIComponent(planId)}/execute`, undefined, { timeout: 60_000 })
+    return data
+  },
+
+  // ── Flujo de onboarding en 3 pasos ──────────────────────────
+
+  /**
+   * Paso 1: genera el plan de onboarding para un candidato (endpoint SCNO,
+   * fuera del namespace /onboarding). Este endpoint SIEMPRE responde con un
+   * estado de error a propósito (no puede autoaprobarse a sí mismo) — lo
+   * único que interesa de la respuesta es `detail.plan.plan_id`.
+   */
+  async generateOnboardPlan(candidateId) {
+    const { data } = await http.post('/scno/lifecycle/onboard', { candidate_id: candidateId })
+    return data
+  },
+
+  /** Paso 2: aprueba un plan ya generado. */
+  async approvePlan(planId) {
+    const { data } = await http.post(`${BASE}/plans/${encodeURIComponent(planId)}/approve`)
+    return data
+  },
+
+  // ── Retiro (decommission) ───────────────────────────────────
+  /**
+   * Retira un host ya onboarded (endpoint SCNO, fuera del namespace
+   * /onboarding). Requiere el plan_id de la asociación ya existente del
+   * candidato (el mismo con el que se onboardeó). Igual que executePlan,
+   * integra varios sistemas en cadena, así que se le da más margen de tiempo.
+   */
+  async decommission(planId, candidateId, reason) {
+    const { data } = await http.post('/scno/lifecycle/decommission', {
+      plan_id: planId,
+      candidate_id: candidateId,
+      reason,
+    }, { timeout: 60_000 })
     return data
   },
 }
