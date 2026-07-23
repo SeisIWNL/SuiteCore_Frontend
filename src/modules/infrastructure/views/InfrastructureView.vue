@@ -86,10 +86,28 @@
         <div class="panel__head"><span class="panel__title">Uso de recursos</span></div>
         <div v-if="resources.loading" class="panel__body"><div class="chart-sk" /></div>
         <div v-else-if="resources.error" class="panel__err">{{ resources.error }}</div>
-        <div v-else class="panel__body gauges">
-          <ResourceGauge label="CPU" :value="cpu" />
-          <ResourceGauge label="Memoria" :value="memoria" />
-          <ResourceGauge label="Almacenamiento" :value="almacenamiento" />
+        <div v-else class="panel__body">
+          <div class="rings">
+            <div v-for="r in resourceRings" :key="r.key" class="ring">
+              <div class="ring__label">{{ r.label }}</div>
+              <div class="ring__circle">
+                <svg viewBox="0 0 120 120" width="120" height="120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--bg-3)" stroke-width="10" />
+                  <circle
+                    cx="60" cy="60" r="52" fill="none" stroke-width="10"
+                    stroke-linecap="round"
+                    :stroke="r.color"
+                    :stroke-dasharray="RING_CIRCUMFERENCE"
+                    :stroke-dashoffset="ringOffset(r.value)"
+                    transform="rotate(-90 60 60)"
+                    class="ring__fill"
+                  />
+                </svg>
+                <div class="ring__center">{{ r.value.toFixed(0) }}%</div>
+              </div>
+              <div class="ring__caption">{{ r.caption }}</div>
+            </div>
+          </div>
         </div>
         <div class="panel__foot">Uso actual de recursos del clúster de virtualización</div>
       </div>
@@ -110,7 +128,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useInfrastructure } from '@/modules/infrastructure/composables/useInfrastructure.js'
 import { readChartTheme } from '@/modules/main/composables/useChartTheme.js'
 import StatusDonut from '@/modules/network/components/StatusDonut.vue'
@@ -126,25 +144,25 @@ function fmtPct(v) {
   return `${Number(v).toFixed(1)}%`
 }
 
-// Gauge inline como barra horizontal con color por nivel
-const ResourceGauge = {
-  props: { label: String, value: { type: Number, default: 0 } },
-  setup(props) {
-    return () => {
-      const v = props.value ?? 0
-      const tone = v >= 85 ? 'gauge--danger' : v >= 60 ? 'gauge--warn' : 'gauge--ok'
-      return h('div', { class: 'gauge' }, [
-        h('div', { class: 'gauge__head' }, [
-          h('span', { class: 'gauge__label' }, props.label),
-          h('span', { class: 'gauge__val' }, `${v.toFixed(1)}%`),
-        ]),
-        h('div', { class: 'gauge__track' }, [
-          h('div', { class: ['gauge__fill', tone], style: { width: Math.min(v, 100) + '%' } }),
-        ]),
-      ])
-    }
-  },
+// Anillo de porcentaje (SVG con stroke-dasharray), compilado como parte
+// del template de este SFC para que el CSS con scope se aplique bien
+// (un componente aparte creado con h() no hereda el atributo de scope).
+const RING_R = 52
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_R
+
+function ringOffset(value) {
+  const pct = Math.min(Math.max(value ?? 0, 0), 100)
+  return RING_CIRCUMFERENCE * (1 - pct / 100)
 }
+
+const resourceRings = computed(() => {
+  const theme = readChartTheme()
+  return [
+    { key: 'cpu', label: 'CPU', value: cpu.value, color: theme.success, caption: 'Uso promedio de CPU en todos los nodos' },
+    { key: 'mem', label: 'Memoria', value: memoria.value, color: theme.blue, caption: 'Uso total de memoria RAM del clúster' },
+    { key: 'disk', label: 'Almacenamiento', value: almacenamiento.value, color: '#a78bfa', caption: 'Uso total del almacenamiento configurado' },
+  ]
+})
 
 const resourceSegments = computed(() => {
   const theme = readChartTheme()
@@ -208,15 +226,18 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .panel__foot { padding: 10px 16px; border-top: 1px solid var(--border); font-size: .72rem; color: var(--text-3); text-align: center; }
 .panel__err { padding: 16px; font-size: .8rem; color: var(--danger); }
 
-.gauges { display: flex; flex-direction: column; gap: 22px; justify-content: center; }
-.gauge__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.gauge__label { font-size: .82rem; font-weight: 600; color: var(--text-1); }
-.gauge__val { font-family: var(--font-mono); font-size: .82rem; font-weight: 700; color: var(--text-1); }
-.gauge__track { height: 10px; background: var(--bg-3); border-radius: 99px; overflow: hidden; }
-.gauge__fill { height: 100%; border-radius: 99px; transition: width .5s ease; }
-.gauge--ok { background: var(--success); }
-.gauge--warn { background: var(--warning); }
-.gauge--danger { background: var(--danger); }
+.rings { display: flex; align-items: flex-start; justify-content: space-around; gap: 16px; flex-wrap: wrap; }
+.ring { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 160px; }
+.ring__label { font-size: .8rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .04em; }
+.ring__circle { position: relative; width: 120px; height: 120px; }
+.ring__circle svg { width: 100%; height: 100%; }
+.ring__fill { transition: stroke-dashoffset .6s ease; }
+.ring__center {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--text-1);
+}
+.ring__caption { font-size: .72rem; color: var(--text-3); text-align: center; line-height: 1.4; }
 
 .chart-sk { width: 100%; height: 170px; background: var(--bg-3); border-radius: var(--radius); animation: shimmer 1.4s ease infinite; }
 @keyframes shimmer { 0%,100%{opacity:.4} 50%{opacity:.7} }
