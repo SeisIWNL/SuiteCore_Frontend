@@ -109,10 +109,8 @@
 
     <!-- ══════ Onboarding: ciclo de vida ══════ -->
     <OnboardingPanel
-      :status="onbStatus"
       :candidates="onbCandidates"
       :plans="onbPlans"
-      :readiness="onbReadiness"
       :executions="onbExecutions"
       :candidate-items="candidateItems"
       :candidate-total="candidateTotal"
@@ -121,7 +119,6 @@
       :lifecycle="lifecycle"
       :execution-total="executionTotal"
       :executions-by-operation="executionsByOperation"
-      :is-execution-ready="isExecutionReady"
       :stage-of="stageOf"
       :search-hosts="searchHosts"
       :onboard-flow="onboardFlow"
@@ -190,7 +187,44 @@
     </div>
 
     <!-- ══════ Acciones ══════ -->
-    <div class="sdn__two sdn__two--single">
+    <div class="sdn__two sdn__two--even">
+      <div class="panel">
+        <div class="panel__head"><span class="panel__title">Salud del sistema de onboarding</span></div>
+        <div v-if="onbStatus.loading || onbReadiness.loading" class="panel__pad">
+          <div v-for="i in 4" :key="i" class="sk sk--row" />
+        </div>
+        <div v-else class="health">
+          <div class="health__row">
+            <span class="health__label">Servicio de onboarding</span>
+            <span class="health__tag" :class="okClass(onbStatus.data?.status)">
+              {{ onbStatus.data?.status || '—' }}
+            </span>
+          </div>
+          <div class="health__row">
+            <span class="health__label">Integridad</span>
+            <span class="health__tag" :class="okClass(onbStatus.data?.integrity)">
+              {{ onbStatus.data?.integrity || '—' }}
+            </span>
+          </div>
+          <div class="health__row">
+            <span class="health__label">Ejecución habilitada</span>
+            <span class="health__tag" :class="isExecutionReady ? 'health__tag--ok' : 'health__tag--warn'">
+              {{ isExecutionReady ? 'Sí' : 'No' }}
+            </span>
+          </div>
+          <div class="health__row">
+            <span class="health__label">Alcance de ejecución</span>
+            <span class="health__val">{{ onbReadiness.data?.executionScope || '—' }}</span>
+          </div>
+          <div class="health__row">
+            <span class="health__label">Ejecutor instalado</span>
+            <span class="health__tag" :class="onbReadiness.data?.executorInstalled ? 'health__tag--ok' : 'health__tag--muted'">
+              {{ onbReadiness.data?.executorInstalled ? 'Sí' : 'No' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div class="panel">
         <div class="panel__head"><span class="panel__title">Seguridad SDN</span></div>
         <div class="act">
@@ -251,6 +285,13 @@ function gaugeTone(v) {
   if (v >= 85) return 'mk__fill--danger'
   if (v >= 60) return 'mk__fill--warn'
   return 'mk__fill--ok'
+}
+
+function okClass(v) {
+  const s = (v ?? '').toLowerCase()
+  if (['ok', 'healthy', 'operativo', 'valid', 'ready'].includes(s)) return 'health__tag--ok'
+  if (!s) return 'health__tag--muted'
+  return 'health__tag--warn'
 }
 
 // Refresco
@@ -315,8 +356,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 
 /* Paneles genéricos */
 .sdn__two { display: grid; grid-template-columns: 1fr 1.3fr; gap: 14px; }
-.sdn__two--single { grid-template-columns: 1fr; }
-.sdn__two--single .panel { max-width: 480px; }
+.sdn__two--even { grid-template-columns: 1fr 1fr; }
 .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
 .panel__head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .panel__title { font-family: var(--font-display); font-size: .8rem; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; }
@@ -370,6 +410,16 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .act__msg { font-size: .78rem; padding: 8px 11px; border-radius: var(--radius); }
 .act__msg--ok { background: var(--success-muted); color: var(--success); }
 .act__msg--err { background: var(--danger-muted); color: var(--danger); }
+
+/* Salud del sistema de onboarding */
+.health { padding: 14px 16px; display: flex; flex-direction: column; gap: 11px; }
+.health__row { display: flex; align-items: center; justify-content: space-between; font-size: .8rem; }
+.health__label { color: var(--text-2); }
+.health__val { font-family: var(--font-mono); font-size: .76rem; color: var(--text-1); }
+.health__tag { font-size: .68rem; font-weight: 700; padding: 2px 9px; border-radius: 99px; text-transform: capitalize; }
+.health__tag--ok { background: var(--success-muted); color: var(--success); }
+.health__tag--warn { background: var(--warning-muted); color: var(--warning); }
+.health__tag--muted { background: var(--bg-3); color: var(--text-3); }
 
 @media (max-width: 900px) {
   .sdn__two { grid-template-columns: 1fr; }

@@ -181,6 +181,33 @@ export function useOnboarding() {
     return payload?.detail?.plan?.plan_id ?? payload?.plan?.plan_id ?? null
   }
 
+  /**
+   * Llama a un endpoint de lifecycle (approve/execute/decommission) y decide
+   * si fue éxito real de forma segura:
+   * - Si la llamada HTTP falló (4xx/5xx), SIEMPRE se considera error, sin
+   *   importar lo que diga el campo `status` dentro del cuerpo — un error
+   *   HTTP es la señal más confiable de que algo salió mal, y el cuerpo de
+   *   un error puede traer datos inconsistentes o de un intento previo.
+   * - Solo si la llamada HTTP resolvió bien se usa el `status` del cuerpo
+   *   para decidir si fue el resultado esperado (`successStatus`).
+   */
+  async function callLifecycle(fn, successStatus) {
+    let data = null
+    let httpFailed = false
+    let httpStatus = null
+    let httpMessage = null
+    try {
+      data = await fn()
+    } catch (err) {
+      httpFailed = true
+      httpStatus = err.status
+      httpMessage = err.message
+      data = err.data
+    }
+    const ok = !httpFailed && data?.status === successStatus
+    return { ok, data, httpFailed, httpStatus, httpMessage }
+  }
+
   /** Corre los 3 pasos en secuencia tras la confirmación del usuario. */
   async function confirmStartOnboarding() {
     const candidate = onboardFlow.candidate
@@ -211,36 +238,32 @@ export function useOnboarding() {
 
     // Paso 2: aprobar el plan
     onboardFlow.message = 'Aprobando plan...'
-    let approveData
-    try {
-      approveData = await onboardingService.approvePlan(planId)
-    } catch (err) {
-      approveData = err.data
-    }
+    const approve = await callLifecycle(() => onboardingService.approvePlan(planId), 'approved')
 
-    if (approveData?.status !== 'approved') {
+    if (!approve.ok) {
       onboardFlow.mode = 'result'
       onboardFlow.tone = 'error'
-      onboardFlow.title = `Estado: ${approveData?.status ?? 'desconocido'}`
-      onboardFlow.message = approveData?.message ?? 'No se pudo aprobar el plan de onboarding.'
+      onboardFlow.title = approve.httpFailed
+        ? `Error HTTP ${approve.httpStatus ?? ''}`.trim()
+        : `Estado: ${approve.data?.status ?? 'desconocido'}`
+      onboardFlow.message =
+        approve.data?.message ?? approve.httpMessage ?? 'No se pudo aprobar el plan de onboarding.'
       await loadAll(true)
       return
     }
 
     // Paso 3: ejecutar el plan
     onboardFlow.message = 'Ejecutando plan de onboarding...'
-    let execData
-    try {
-      execData = await onboardingService.executePlan(planId)
-    } catch (err) {
-      execData = err.data
-    }
+    const exec = await callLifecycle(() => onboardingService.executePlan(planId), 'completed')
 
-    if (execData?.status !== 'completed') {
+    if (!exec.ok) {
       onboardFlow.mode = 'result'
       onboardFlow.tone = 'error'
-      onboardFlow.title = `Estado: ${execData?.status ?? 'desconocido'}`
-      onboardFlow.message = execData?.message ?? execData?.reason ?? 'No se pudo ejecutar el plan de onboarding.'
+      onboardFlow.title = exec.httpFailed
+        ? `Error HTTP ${exec.httpStatus ?? ''}`.trim()
+        : `Estado: ${exec.data?.status ?? 'desconocido'}`
+      onboardFlow.message =
+        exec.data?.message ?? exec.data?.reason ?? exec.httpMessage ?? 'No se pudo ejecutar el plan de onboarding.'
       await loadAll(true)
       return
     }
@@ -324,22 +347,37 @@ export function useOnboarding() {
     decommissionFlow.title = 'Procesando retiro'
     decommissionFlow.message = 'Retirando host...'
 
-    let data
-    try {
-      data = await onboardingService.decommission(planId, candidateId, reason)
-    } catch (err) {
-      data = err.data
-    }
+    const result = await callLifecycle(
+      () => onboardingService.decommission(planId, candidateId, reason),
+      'completed'
+    )
+
+    // El backend a veces envía un status/mensaje de nivel superior engañoso
+    // (ej. "completed" + "Equipo retirado correctamente") aunque el detalle
+    // real de la ejecución, anidado en `execution`, indique un error (ej.
+    // "Debe indicar un motivo de al menos 10 caracteres."). Por eso se
+    // revisa también ese sub-objeto antes de decidir éxito/error y qué
+    // mensaje mostrar.
+    const exec = result.data?.execution
+    const execFailed = !!(exec?.status && exec.status !== 'completed')
+    const ok = result.ok && !execFailed
 
     decommissionFlow.mode = 'result'
-    if (data?.status === 'completed') {
+    if (ok) {
       decommissionFlow.tone = 'ok'
       decommissionFlow.title = 'Retiro completado'
-      decommissionFlow.message = data?.message ?? `${hostLabel} fue retirado correctamente.`
+      decommissionFlow.message = result.data?.message ?? `${hostLabel} fue retirado correctamente.`
     } else {
       decommissionFlow.tone = 'error'
-      decommissionFlow.title = `Estado: ${data?.status ?? 'desconocido'}`
-      decommissionFlow.message = data?.message ?? 'No se pudo completar el retiro del host.'
+      decommissionFlow.title = result.httpFailed
+        ? `Error HTTP ${result.httpStatus ?? ''}`.trim()
+        : execFailed
+          ? `Estado: ${exec.status}`
+          : `Estado: ${result.data?.status ?? 'desconocido'}`
+      // Prioriza el detalle anidado de "execution" (más específico y
+      // confiable) antes que el mensaje de nivel superior.
+      decommissionFlow.message =
+        exec?.message ?? exec?.reason ?? result.data?.message ?? result.httpMessage ?? 'No se pudo completar el retiro del host.'
     }
     await loadAll(true) // refresca candidatos/planes con el nuevo estado
   }

@@ -263,7 +263,7 @@
 
     <div class="panel" id="onb-plans">
       <div class="panel__head">
-        <span class="panel__title">Planes de onboarding</span>
+        <span class="panel__title">Historial de onboarding</span>
         <span class="panel__hint">{{ planItems.length }} de {{ planTotal }}</span>
       </div>
       <div v-if="plans.loading" class="panel__pad">
@@ -277,70 +277,30 @@
         <table class="tbl">
           <thead>
             <tr>
-              <th class="tbl__th">Plan</th>
-              <th class="tbl__th">Estado</th>
+              <th class="tbl__th">Dispositivo</th>
+              <th class="tbl__th">IP</th>
               <th class="tbl__th">Riesgo</th>
-              <th class="tbl__th">Solicitado por</th>
-              <th class="tbl__th">Pasos</th>
-              <th class="tbl__th">Creado</th>
+              <th class="tbl__th">Solicitado / aprobado por</th>
+              <th class="tbl__th">Fecha de creado</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in planItems" :key="p.plan_id" class="tbl__tr">
-              <td class="tbl__td"><code class="mono">{{ shortId(p.plan_id) }}</code></td>
+            <tr v-for="p in planItems" :key="p.planId" class="tbl__tr">
+              <td class="tbl__td"><span class="strong">{{ deviceLabel(p) }}</span></td>
+              <td class="tbl__td"><code class="mono">{{ deviceIp(p) }}</code></td>
               <td class="tbl__td">
-                <span class="badge" :class="planStatusClass(p.status)">{{ p.status || '—' }}</span>
+                <span class="risk" :class="riskClass(p.riskLevel)">{{ p.riskLevel || '—' }}</span>
               </td>
               <td class="tbl__td">
-                <span class="risk" :class="riskClass(p.risk_level)">{{ p.risk_level || '—' }}</span>
+                <span class="strong">{{ responsibleName(p) }}</span>
+                <span v-if="responsibleName(p) !== '—'" class="responsible-tag">
+                  {{ p.approvedBy ? 'Aprobado' : 'Solicitado' }}
+                </span>
               </td>
-              <td class="tbl__td">{{ p.requested_by || '—' }}</td>
-              <td class="tbl__td">
-                <span class="count-badge">{{ p.plan?.steps?.length ?? 0 }}</span>
-              </td>
-              <td class="tbl__td"><span class="muted">{{ fmtDate(p.created_at) }}</span></td>
+              <td class="tbl__td"><span class="muted">{{ fmtDate(p.createdAt) }}</span></td>
             </tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <div class="onb__bottom onb__bottom--single">
-      <div class="panel">
-        <div class="panel__head"><span class="panel__title">Salud del sistema de onboarding</span></div>
-        <div v-if="status.loading || readiness.loading" class="panel__pad">
-          <div v-for="i in 4" :key="i" class="sk sk--row" />
-        </div>
-        <div v-else class="health">
-          <div class="health__row">
-            <span class="health__label">Servicio de onboarding</span>
-            <span class="health__tag" :class="okClass(status.data?.status)">
-              {{ status.data?.status || '—' }}
-            </span>
-          </div>
-          <div class="health__row">
-            <span class="health__label">Integridad</span>
-            <span class="health__tag" :class="okClass(status.data?.integrity)">
-              {{ status.data?.integrity || '—' }}
-            </span>
-          </div>
-          <div class="health__row">
-            <span class="health__label">Ejecución habilitada</span>
-            <span class="health__tag" :class="isExecutionReady ? 'health__tag--ok' : 'health__tag--warn'">
-              {{ isExecutionReady ? 'Sí' : 'No' }}
-            </span>
-          </div>
-          <div class="health__row">
-            <span class="health__label">Alcance de ejecución</span>
-            <span class="health__val">{{ readiness.data?.executionScope || '—' }}</span>
-          </div>
-          <div class="health__row">
-            <span class="health__label">Ejecutor instalado</span>
-            <span class="health__tag" :class="readiness.data?.executorInstalled ? 'health__tag--ok' : 'health__tag--muted'">
-              {{ readiness.data?.executorInstalled ? 'Sí' : 'No' }}
-            </span>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -355,10 +315,8 @@ import StatusDonut from '@/modules/network/components/StatusDonut.vue'
 import OpsBarChart from '@/modules/sdn/components/OpsBarChart.vue'
 
 const props = defineProps({
-  status:         { type: Object, required: true },
   candidates:     { type: Object, required: true },
   plans:          { type: Object, required: true },
-  readiness:      { type: Object, required: true },
   executions:     { type: Object, required: true },
   candidateItems: { type: Array,  default: () => [] },
   candidateTotal: { type: Number, default: 0 },
@@ -367,7 +325,6 @@ const props = defineProps({
   lifecycle:      { type: Object, default: () => ({}) },
   executionTotal: { type: Number, default: 0 },
   executionsByOperation: { type: Object, default: () => ({}) },
-  isExecutionReady: { type: Boolean, default: false },
   stageOf:        { type: Function, required: true },
   // Acciones
   searchHosts:            { type: Function, default: () => async () => ({ items: [] }) },
@@ -459,37 +416,37 @@ function stageClass(s) {
     onboarded: 'badge--accent', retirados: 'badge--danger',
   }[s] ?? 'badge--muted'
 }
-function planStatusClass(st) {
-  const s = (st ?? '').toLowerCase()
-  if (s.includes('aprob') || s.includes('approved')) return 'badge--ok'
-  if (s.includes('pend')) return 'badge--warn'
-  if (s.includes('rechaz') || s.includes('reject')) return 'badge--danger'
-  return 'badge--muted'
-}
 function riskClass(r) {
   const s = (r ?? '').toLowerCase()
   if (s.includes('alto') || s.includes('high')) return 'risk--high'
   if (s.includes('medio') || s.includes('medium')) return 'risk--mid'
   return 'risk--low'
 }
-function okClass(v) {
-  const s = (v ?? '').toLowerCase()
-  if (['ok','healthy','operativo','valid','ready'].includes(s)) return 'health__tag--ok'
-  if (!s) return 'health__tag--muted'
-  return 'health__tag--warn'
+
+// ── Historial de onboarding: dispositivo por candidateSnapshot ─────
+// Cada plan ya trae la info del candidato incrustada (candidateSnapshot,
+// con respaldo en plan.candidate) — no hace falta cruzar con la tabla
+// de Hosts administrados.
+function planCandidate(plan) {
+  return plan.candidateSnapshot ?? plan.plan?.candidate ?? null
 }
-function shortId(id) {
-  if (!id) return '—'
-  return id.length > 12 ? id.slice(0, 12) + '…' : id
+function deviceLabel(plan) {
+  const c = planCandidate(plan)
+  return c?.name || c?.hostname || '—'
+}
+function deviceIp(plan) {
+  const c = planCandidate(plan)
+  return c?.management_ip || '—'
+}
+/** Prioriza quién aprobó el plan; si aún no está aprobado, muestra quién lo solicitó. */
+function responsibleName(plan) {
+  return plan.approvedBy || plan.requestedBy || '—'
 }
 </script>
 
 <style scoped>
 .onb { display: flex; flex-direction: column; gap: 14px; }
 .onb__top { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; }
-.onb__bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.onb__bottom--single { grid-template-columns: 1fr; }
-.onb__bottom--single .panel { max-width: 480px; }
 
 .panel { background: var(--bg-1); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; }
 .panel__head { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); }
@@ -516,6 +473,11 @@ function shortId(id) {
 .strong { font-weight: 600; }
 .mono { font-family: var(--font-mono); font-size: .76rem; color: var(--text-2); }
 .muted { color: var(--text-3); font-size: .76rem; }
+.responsible-tag {
+  display: block; margin-top: 2px;
+  font-size: .64rem; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .04em;
+}
 
 .badge { font-size: .68rem; font-weight: 700; padding: 2px 9px; border-radius: 99px; text-transform: capitalize; }
 .badge--ok { background: var(--success-muted); color: var(--success); }
@@ -532,17 +494,9 @@ function shortId(id) {
 
 .count-badge { font-family: var(--font-mono); font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--bg-3); color: var(--text-2); }
 
-.health { padding: 14px 16px; display: flex; flex-direction: column; gap: 11px; }
-.health__row { display: flex; align-items: center; justify-content: space-between; font-size: .8rem; }
-.health__label { color: var(--text-2); }
-.health__val { font-family: var(--font-mono); font-size: .76rem; color: var(--text-1); }
-.health__tag { font-size: .68rem; font-weight: 700; padding: 2px 9px; border-radius: 99px; text-transform: capitalize; }
-.health__tag--ok { background: var(--success-muted); color: var(--success); }
-.health__tag--warn { background: var(--warning-muted); color: var(--warning); }
-.health__tag--muted { background: var(--bg-3); color: var(--text-3); }
 
 @media (max-width: 900px) {
-  .onb__top, .onb__bottom { grid-template-columns: 1fr; }
+  .onb__top { grid-template-columns: 1fr; }
 }
 
 /* Cabecera de panel con acciones a la derecha */
