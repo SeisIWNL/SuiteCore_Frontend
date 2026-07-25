@@ -146,7 +146,7 @@
                     {{ d.status === 1 ? 'Activo' : (d.statusLabel || 'Caído') }}
                   </span>
                 </td>
-                <td class="tbl__td"><span class="muted">{{ d.lastPolled || '—' }}</span></td>
+                <td class="tbl__td"><span class="muted">{{ d.last_polled || '—' }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -274,7 +274,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.net { max-width: 1320px; }
+.net { max-width: auto; }
 
 .net__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .net__title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--text-1); }

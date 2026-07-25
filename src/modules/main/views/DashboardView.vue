@@ -164,7 +164,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.dash { max-width: 1200px; }
+.dash { max-width: auto; }
 
 /* KPIs nativos */
 .dash__kpis {

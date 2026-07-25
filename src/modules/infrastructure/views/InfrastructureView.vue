@@ -187,7 +187,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.infra { max-width: 1100px; }
+.infra { max-width: auto; }
 
 .infra__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .infra__title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--text-1); }

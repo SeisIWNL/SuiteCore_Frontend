@@ -97,7 +97,7 @@ const activeTabMeta = computed(() =>
 </script>
 
 <style scoped>
-.inventory { max-width: 1200px; }
+.inventory { max-width: auto; }
 
 .inventory__head {
   display: flex; justify-content: space-between; align-items: flex-start;

@@ -225,7 +225,7 @@
         </div>
       </div>
 
-      <div class="panel">
+      <!--<div class="panel">
         <div class="panel__head"><span class="panel__title">Seguridad SDN</span></div>
         <div class="act">
           <p class="act__hint">Bloquea o desbloquea el tráfico de una dirección IP en el controlador.</p>
@@ -241,6 +241,7 @@
           </div>
         </div>
       </div>
+      -->
     </div>
 
   </div>
@@ -318,7 +319,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.sdn { max-width: 1320px; display: flex; flex-direction: column; gap: 16px; }
+.sdn { max-width: auto; display: flex; flex-direction: column; gap: 16px; }
 
 .sdn__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .sdn__title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--text-1); }

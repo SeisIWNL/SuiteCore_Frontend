@@ -1,4 +1,3 @@
-// src/modules/infrastructure/composables/useInfrastructure.js
 import { ref, computed } from 'vue'
 import { infrastructureService } from '@/modules/infrastructure/services/infrastructure.service.js'
 
@@ -34,7 +33,6 @@ export function useInfrastructure() {
     summary.value.loading || resources.value.loading
   )
 
-  // Datos de uso de recursos (porcentajes)
   const cpu = computed(() => resources.value.data?.datos?.cpu ?? 0)
   const memoria = computed(() => resources.value.data?.datos?.memoria ?? 0)
   const almacenamiento = computed(() => resources.value.data?.datos?.almacenamiento ?? 0)

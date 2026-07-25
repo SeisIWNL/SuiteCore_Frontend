@@ -355,7 +355,7 @@ onUnmounted(stopAutoRefresh)
 </script>
 
 <style scoped>
-.vpn { max-width: 1200px; }
+.vpn { max-width: auto; }
 
 /* Header */
 .vpn__head {

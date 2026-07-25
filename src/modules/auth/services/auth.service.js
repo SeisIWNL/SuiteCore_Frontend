@@ -1,12 +1,5 @@
 import http from '@/services/http.js'
 
-/**
- * authService
- * Conecta con los endpoints del backend .NET:
- *   POST /auth/login
- *   POST /auth/logout
- *   GET  /auth/me
- */
 export const authService = {
   /**
    * @param {string} username
