@@ -1,16 +1,5 @@
-// src/modules/sdn/services/sdn.service.js
 import http from '@/services/http.js'
 
-/**
- * SDN — monitoreo del controlador SCNO (OVS + OpenFlow) y del MikroTik.
- *
- * GET /api/sdn/health               → estado del servicio SCNO
- * GET /api/sdn/topology             → bridge, controlador, versión OVS, puertos
- * GET /api/sdn/statistics           → estadísticas de puertos (schema aún abierto)
- * GET /api/sdn/flows                → flujos OpenFlow activos (schema aún abierto)
- * GET /api/sdn/mikrotik/info        → info del dispositivo MikroTik
- * GET /api/sdn/mikrotik/interfaces  → interfaces del MikroTik
- */
 export const sdnService = {
   /** @returns {Promise<{ status, service, version, controller, bridge, openflow, timestamp }>} */
   async getHealth() {
@@ -48,12 +37,9 @@ export const sdnService = {
     return data
   },
 
-  // ── Acciones ───────────────────────────────────────────────
-
   /**
-   * Bloquea una IP instalando una regla OpenFlow de descarte.
    * @param {string} ip
-   * @returns {Promise<object>} respuesta del SCNO (mensaje)
+   * @returns {Promise<object>}
    */
   async blockIp(ip) {
     const { data } = await http.post('/sdn/security/block-ip', { ip })
@@ -61,7 +47,6 @@ export const sdnService = {
   },
 
   /**
-   * Elimina el bloqueo de una IP.
    * @param {string} ip
    * @returns {Promise<object>}
    */
@@ -71,7 +56,6 @@ export const sdnService = {
   },
 
   /**
-   * Ejecuta una acción de automatización en el SCNO.
    * @param {string} action  nombre de la acción/script
    * @returns {Promise<object>}
    */

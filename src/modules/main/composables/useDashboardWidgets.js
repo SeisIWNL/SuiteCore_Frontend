@@ -1,16 +1,8 @@
-// src/modules/main/composables/useDashboardWidgets.js
 import { ref, computed } from 'vue'
 import { usePermissionsStore } from '@/stores/permissions.js'
 import { dashboardService } from '@/modules/main/services/dashboard.service.js'
 import { incidentsService } from '@/modules/main/services/incidents.service.js'
 
-/**
- * Decide qué widgets del dashboard mostrar según los módulos permitidos
- * del usuario (allowedSlugs) y carga los datos de cada uno bajo demanda.
- *
- * Cada widget declara `requires`: lista de slugs; se muestra si el usuario
- * tiene acceso a AL MENOS UNO de ellos.
- */
 export function useDashboardWidgets() {
   const perms = usePermissionsStore()
 

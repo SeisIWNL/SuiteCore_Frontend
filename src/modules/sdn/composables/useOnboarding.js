@@ -1,4 +1,3 @@
-// src/modules/sdn/composables/useOnboarding.js
 import { ref, reactive, computed } from 'vue'
 import { onboardingService } from '@/modules/sdn/services/onboarding.service.js'
 
@@ -36,13 +35,11 @@ export function useOnboarding() {
     readiness.value.loading || executions.value.loading
   )
 
-  // ── Candidatos ─────────────────────────────────────────────
   const candidateItems = computed(() => candidates.value.data?.items ?? [])
   const candidateTotal = computed(() =>
     candidates.value.data?.total ?? candidateItems.value.length
   )
 
-  /** Normaliza el estado/elegibilidad de un candidato a una etapa del ciclo. */
   function stageOf(c) {
     const state = (c.state ?? '').toLowerCase()
     const elig  = (c.eligibility ?? '').toLowerCase()
@@ -52,20 +49,16 @@ export function useOnboarding() {
     return 'detectados'
   }
 
-  // ── Planes ─────────────────────────────────────────────────
   const planItems = computed(() => plans.value.data?.items ?? [])
   const planTotal = computed(() => plans.value.data?.total ?? planItems.value.length)
 
-  // Conteos del ciclo de vida (tarjeta + dona del wireframe)
   const lifecycle = computed(() => {
     const acc = { detectados: 0, elegibles: 0, onboarded: 0, retirados: 0, pendientes: 0 }
     for (const c of candidateItems.value) {
       const s = stageOf(c)
       acc[s] = (acc[s] ?? 0) + 1
     }
-    // "Detectados" en el wireframe es el total descubierto
     acc.detectados = candidateItems.value.length
-    // Pendientes = planes que esperan aprobación
     acc.pendientes = planItems.value.filter(p =>
       (p.status ?? '').toLowerCase().includes('pend')
     ).length
@@ -81,18 +74,15 @@ export function useOnboarding() {
     return acc
   })
 
-  // ── Ejecuciones (schema abierto: proxy del SCNO) ───────────
   const executionItems = computed(() => {
     const d = executions.value.data
     if (!d) return []
-    // El SCNO puede devolver { items: [] }, { executions: [] } o el array directo
     if (Array.isArray(d)) return d
     return d.items ?? d.executions ?? d.datos ?? []
   })
 
   const executionTotal = computed(() => executionItems.value.length)
 
-  // Conteo por operación para el gráfico de ejecuciones automáticas
   const executionsByOperation = computed(() => {
     const acc = {}
     for (const e of executionItems.value) {
@@ -102,27 +92,17 @@ export function useOnboarding() {
     return acc
   })
 
-  // ── Readiness / salud del sistema ──────────────────────────
   const isExecutionReady = computed(() =>
     readiness.value.data?.overallExecutionReady === true ||
     readiness.value.data?.executionAvailable === true
   )
 
-  // ── Acciones ─────────────────────────────────────────────────
-
-  /** Extrae un mensaje legible de la respuesta cruda del SCNO (objeto o texto). */
   function extractMessage(raw) {
     if (raw == null) return 'Operación completada.'
     if (typeof raw === 'string') return raw
     return raw.message ?? raw.status ?? raw.detail ?? JSON.stringify(raw)
   }
 
-  /**
-   * Busca hosts candidatos en la red (GET /onboarding/candidates) y
-   * actualiza la tabla de "Hosts administrados" con lo que devuelva.
-   * Devuelve la respuesta cruda para que la vista arme el mensaje del
-   * popup (cuántos hosts se encontraron).
-   */
   async function searchHosts() {
     candidates.value.loading = true
     candidates.value.error = null
@@ -138,20 +118,15 @@ export function useOnboarding() {
     }
   }
 
-  // ── Flujo de onboarding en 3 pasos ──────────────────────────
-  // Estado del diálogo: confirmación → progreso (con mensaje por paso) →
-  // resultado final (éxito o error). Un solo objeto reactivo controla las
-  // 3 fases para que la vista renderice un único modal.
   const onboardFlow = reactive({
     open: false,
-    mode: 'confirm',   // 'confirm' | 'progress' | 'result'
-    tone: 'ok',        // 'ok' | 'error' (solo aplica en mode 'result')
+    mode: 'confirm',   
+    tone: 'ok',        
     title: '',
     message: '',
     candidate: null,
   })
 
-  /** Abre el modal de confirmación para un candidato puntual. */
   function askStartOnboarding(candidate) {
     onboardFlow.open = true
     onboardFlow.mode = 'confirm'
@@ -172,25 +147,10 @@ export function useOnboarding() {
     onboardFlow.candidate = null
   }
 
-  /**
-   * Extrae el plan_id de la respuesta (o del error) del paso 1. El endpoint
-   * SIEMPRE responde en estado de error a propósito (no puede autoaprobarse),
-   * así que se revisa tanto la respuesta exitosa como la adjunta al error.
-   */
   function extractPlanId(payload) {
     return payload?.detail?.plan?.plan_id ?? payload?.plan?.plan_id ?? null
   }
 
-  /**
-   * Llama a un endpoint de lifecycle (approve/execute/decommission) y decide
-   * si fue éxito real de forma segura:
-   * - Si la llamada HTTP falló (4xx/5xx), SIEMPRE se considera error, sin
-   *   importar lo que diga el campo `status` dentro del cuerpo — un error
-   *   HTTP es la señal más confiable de que algo salió mal, y el cuerpo de
-   *   un error puede traer datos inconsistentes o de un intento previo.
-   * - Solo si la llamada HTTP resolvió bien se usa el `status` del cuerpo
-   *   para decidir si fue el resultado esperado (`successStatus`).
-   */
   async function callLifecycle(fn, successStatus) {
     let data = null
     let httpFailed = false
@@ -208,7 +168,6 @@ export function useOnboarding() {
     return { ok, data, httpFailed, httpStatus, httpMessage }
   }
 
-  /** Corre los 3 pasos en secuencia tras la confirmación del usuario. */
   async function confirmStartOnboarding() {
     const candidate = onboardFlow.candidate
     if (!candidate) return
@@ -219,7 +178,7 @@ export function useOnboarding() {
     onboardFlow.title = 'Procesando onboarding'
     onboardFlow.message = 'Generando el plan...'
 
-    // Paso 1: generar el planId (se ignora el "status" de este paso a propósito)
+    // Paso 1: generar el planId
     let planId = null
     try {
       const data = await onboardingService.generateOnboardPlan(candidateId)
@@ -272,15 +231,13 @@ export function useOnboarding() {
     onboardFlow.tone = 'ok'
     onboardFlow.title = 'Onboarding completado'
     onboardFlow.message = `El proceso de onboarding para ${hostLabel} se completó con éxito.`
-    await loadAll(true) // refresca candidatos/planes con el nuevo estado
+    await loadAll(true)
   }
 
-  // ── Flujo de retiro (decommission) ──────────────────────────
-  // Confirmación → motivo (texto libre) → progreso → resultado.
   const decommissionFlow = reactive({
     open: false,
-    mode: 'confirm',   // 'confirm' | 'reason' | 'progress' | 'result'
-    tone: 'ok',        // 'ok' | 'error' (solo en mode 'result')
+    mode: 'confirm',   
+    tone: 'ok',        
     title: '',
     message: '',
     candidate: null,
@@ -310,7 +267,6 @@ export function useOnboarding() {
     decommissionFlow.reason = ''
   }
 
-  /** El usuario confirmó "Sí" en el paso de confirmación → pasa a pedir el motivo. */
   function proceedToDecommissionReason() {
     decommissionFlow.mode = 'reason'
     decommissionFlow.title = 'Motivo del retiro'
@@ -323,7 +279,6 @@ export function useOnboarding() {
     decommissionFlow.reason = ''
   }
 
-  /** Envía el motivo y ejecuta el retiro contra el SCNO. */
   async function submitDecommission() {
     const candidate = decommissionFlow.candidate
     if (!candidate) return
@@ -331,7 +286,7 @@ export function useOnboarding() {
     const hostLabel = candidate.name || candidate.hostname || 'el host'
     const reason = decommissionFlow.reason?.trim()
 
-    if (!reason) return // el botón ya está deshabilitado sin motivo, por seguridad
+    if (!reason) return
 
     const planId = findPlanIdForCandidate(candidateId)
     if (!planId) {
@@ -352,12 +307,6 @@ export function useOnboarding() {
       'completed'
     )
 
-    // El backend a veces envía un status/mensaje de nivel superior engañoso
-    // (ej. "completed" + "Equipo retirado correctamente") aunque el detalle
-    // real de la ejecución, anidado en `execution`, indique un error (ej.
-    // "Debe indicar un motivo de al menos 10 caracteres."). Por eso se
-    // revisa también ese sub-objeto antes de decidir éxito/error y qué
-    // mensaje mostrar.
     const exec = result.data?.execution
     const execFailed = !!(exec?.status && exec.status !== 'completed')
     const ok = result.ok && !execFailed
@@ -374,12 +323,10 @@ export function useOnboarding() {
         : execFailed
           ? `Estado: ${exec.status}`
           : `Estado: ${result.data?.status ?? 'desconocido'}`
-      // Prioriza el detalle anidado de "execution" (más específico y
-      // confiable) antes que el mensaje de nivel superior.
       decommissionFlow.message =
         exec?.message ?? exec?.reason ?? result.data?.message ?? result.httpMessage ?? 'No se pudo completar el retiro del host.'
     }
-    await loadAll(true) // refresca candidatos/planes con el nuevo estado
+    await loadAll(true)
   }
 
   return {
@@ -390,7 +337,6 @@ export function useOnboarding() {
     executionItems, executionTotal, executionsByOperation,
     isExecutionReady,
     loadAll,
-    // Acciones
     searchHosts,
     onboardFlow, askStartOnboarding, cancelOnboarding,
     confirmStartOnboarding, closeOnboardResult,
@@ -399,7 +345,6 @@ export function useOnboarding() {
   }
 }
 
-/** Formatea una fecha ISO a "DD/MM/YYYY HH:mm:ss". */
 export function formatDateTime(iso) {
   if (!iso) return '—'
   const d = new Date(iso)

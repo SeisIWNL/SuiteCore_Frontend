@@ -1,6 +1,3 @@
-// src/modules/backups/router.js
-// Solo exporta children — el DashboardLayout lo provee router/index.js
-
 export const backupsRoutes = [
   {
     path: '/backups',

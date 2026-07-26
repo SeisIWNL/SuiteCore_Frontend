@@ -199,11 +199,9 @@ const emit = defineEmits(['close'])
 
 const { formatDateTime, formatRelative } = useDateFormat()
 
-// view: 'list' | 'config'
 const view   = ref('list')
 const copied = ref(false)
 
-// El composable usa deviceName de forma reactiva (toRef sobre la prop)
 const {
   versions, versionsError, versionsLoading, hasVersions,
   backup, backupError, backupLoading, selectedVersion,

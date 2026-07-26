@@ -1,4 +1,3 @@
-// src/modules/network/composables/useNetwork.js
 import { ref, computed } from 'vue'
 import { networkService } from '@/modules/network/services/network.service.js'
 
@@ -65,7 +64,6 @@ export function useNetwork() {
   const interfaces = computed(() => ifTable.value.data?.datos ?? [])
   const alerts = computed(() => alertTable.value.data?.datos ?? [])
 
-  // Mapa deviceId → nombre, para resolver el dispositivo de cada interfaz
   const deviceNameById = computed(() => {
     const map = new Map()
     for (const d of devices.value) {

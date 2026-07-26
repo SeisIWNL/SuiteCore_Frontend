@@ -1,14 +1,11 @@
-// src/modules/backups/composables/useVersionHistory.js
 import { ref, computed, unref } from 'vue'
 import { backupsService } from '@/modules/backups/services/backups.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
 
 /**
- * Maneja el historial de versiones de un dispositivo y la carga
- * de la configuración de cada versión.
  *
  * @param {string | import('vue').Ref<string>} deviceNameRef
- *        Nombre del dispositivo (acepta string o ref reactiva).
+ *        
  */
 export function useVersionHistory(deviceNameRef) {
   const loader = useLoaderStore()

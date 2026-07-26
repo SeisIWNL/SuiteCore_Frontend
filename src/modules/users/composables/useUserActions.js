@@ -1,16 +1,9 @@
-// src/modules/users/composables/useUserActions.js
 import { ref, reactive } from 'vue'
 import { usersService } from '@/modules/users/services/users.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
 
 /**
- * Maneja las acciones CRUD sobre usuarios (crear, editar, deshabilitar,
- * reactivar) y los estados de los modales asociados.
- *
- * Tras cada acción exitosa ejecuta el callback `onChanged` (recarga de
- * GET /Permission/Roles desde la vista).
- *
- * @param {() => Promise<void>} onChanged  callback de recarga
+ * @param {() => Promise<void>} onChanged 
  */
 export function useUserActions(onChanged, getRoles) {
   const loader = useLoaderStore()
@@ -21,9 +14,9 @@ export function useUserActions(onChanged, getRoles) {
   // ── Modal Crear/Editar ─────────────────────────────────────
   const formModal = reactive({
     open: false,
-    mode: 'create',      // 'create' | 'edit'
-    role: null,          // rol de contexto (objeto { id, name, ... })
-    username: '',        // username objetivo (en edición, fijo)
+    mode: 'create',      
+    role: null,          
+    username: '',        
     form: {
       firstName: '',
       lastName: '',
@@ -68,9 +61,6 @@ export function useUserActions(onChanged, getRoles) {
     formModal.role = role
     formModal.username = user.username
 
-    // Determina el gidNumber a preseleccionar en el combo:
-    // 1) el gidNumber real del usuario si coincide con algún rol disponible,
-    // 2) si no, el rol de contexto desde donde se abrió la edición.
     const roles = (typeof getRoles === 'function' ? getRoles() : []) ?? []
     const userGid = String(user.gidNumber ?? '').trim()
     const exists = roles.some(r => String(r.id).trim() === userGid)
@@ -80,7 +70,7 @@ export function useUserActions(onChanged, getRoles) {
       firstName: user.firstName ?? '',
       lastName: user.lastName ?? '',
       username: user.username ?? '',
-      password: '',                          // no se edita aquí
+      password: '',                          
       gidNumber: selectedGid,
     }
     formModal.errors = {}
@@ -189,20 +179,14 @@ export function useUserActions(onChanged, getRoles) {
   }
 }
 
-// Intenta extraer un mensaje legible del error.
-// Nota: http.js ya transforma el error en new Error(msg), así que normalmente
-// el detalle viene en err.message. Cubrimos también el caso de que llegue
-// el error de axios crudo (con response.data de .NET ProblemDetails).
 function extractError(err) {
   const data = err?.response?.data
 
-  // Errores de validación de .NET: { errors: { Campo: ["msg"] } }
   if (data?.errors && typeof data.errors === 'object') {
     const msgs = Object.values(data.errors).flat().filter(Boolean)
     if (msgs.length) return msgs.join(' ')
   }
 
-  // Candidatos en orden; se descartan los vacíos/espacios
   const candidates = [
     data?.message,
     data?.title,
@@ -214,7 +198,6 @@ function extractError(err) {
     if (typeof c === 'string' && c.trim()) return c.trim()
   }
 
-  // Último recurso: status HTTP si existe
   const status = err?.response?.status
   if (status) return `Error ${status} del servidor.`
   return null

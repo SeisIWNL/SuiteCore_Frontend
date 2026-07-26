@@ -1,4 +1,3 @@
-// src/modules/infrastructure/router.js — solo children
 export const infrastructureRoutes = [
   {
     path: '/infrastructure',

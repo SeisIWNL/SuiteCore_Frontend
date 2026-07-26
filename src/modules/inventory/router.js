@@ -1,6 +1,3 @@
-// src/modules/inventory/router.js
-// Solo exporta los children — el DashboardLayout lo provee router/index.js
-
 export const inventoryRoutes = [
   {
     path: '/inventory',

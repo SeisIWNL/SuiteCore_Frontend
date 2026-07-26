@@ -1,4 +1,3 @@
-// src/modules/main/composables/useDashboardData.js
 import { ref, computed } from 'vue'
 import { dashboardApiService } from '@/modules/main/services/dashboardApi.service.js'
 

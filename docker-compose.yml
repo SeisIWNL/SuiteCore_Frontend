@@ -4,9 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        # Cambia esta URL por la de tu backend en producción.
-        # Si usas el proxy de Nginx (bloque comentado en nginx.conf),
-        # deja el valor como /api
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
         VITE_APP_NAME: SuiteCore
     container_name: suitecore-frontend

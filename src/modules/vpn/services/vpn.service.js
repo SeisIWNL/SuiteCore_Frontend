@@ -1,15 +1,5 @@
-// src/modules/vpn/services/vpn.service.js
 import http from '@/services/http.js'
 
-/**
- * VPN — estado de los servicios de acceso remoto.
- *
- * GET /api/vpn/status           → estado del servidor RADIUS/VPN
- * GET /api/vpn/wireguard        → interfaz WireGuard y sus peers
- * GET /api/vpn/wireguard/stats  → estadísticas de tráfico de WireGuard
- * GET /api/vpn/tailscale        → red mesh Tailscale y todas sus máquinas
- * GET /api/vpn/access-policy    → políticas de acceso por red destino
- */
 export const vpnService = {
   /** @returns {Promise<{ server, managementIp, uptime, isOnline }>} */
   async getStatus() {

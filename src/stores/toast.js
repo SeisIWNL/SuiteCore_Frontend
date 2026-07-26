@@ -1,12 +1,6 @@
-// src/stores/toast.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-/**
- * Notificaciones tipo "toast" — mensajes flotantes de éxito/error/info que
- * aparecen brevemente y se auto-descartan. Se muestran vía <AppToast />,
- * montado globalmente en App.vue.
- */
 export const useToastStore = defineStore('toast', () => {
   const toasts = ref([])
   let nextId = 1
@@ -14,9 +8,9 @@ export const useToastStore = defineStore('toast', () => {
   /**
    * @param {object} opts
    * @param {'success'|'error'|'info'} opts.type
-   * @param {string} opts.title     - Encabezado corto (ej. "Escaneo iniciado")
-   * @param {string} [opts.message] - Detalle opcional
-   * @param {number} [opts.duration] - ms antes de auto-cerrar (0 = no se cierra solo)
+   * @param {string} opts.title     
+   * @param {string} [opts.message] 
+   * @param {number} [opts.duration] 
    */
   function show({ type = 'info', title, message = '', duration = 6000 }) {
     const id = nextId++

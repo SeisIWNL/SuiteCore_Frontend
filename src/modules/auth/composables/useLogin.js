@@ -1,4 +1,3 @@
-// src/modules/auth/composables/useLogin.js
 import { ref } from 'vue'
 import { useForm } from 'vee-validate'
 import * as yup from 'yup'

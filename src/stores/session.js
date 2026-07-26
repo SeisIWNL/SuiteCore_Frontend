@@ -1,15 +1,10 @@
-// src/stores/session.js
-
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
 export const useSessionStore = defineStore('session', () => {
-  // Estado del aviso de "por expirar"
   const warningVisible  = ref(false)
   const warningMinutes  = ref(5)
 
-  // Razón de redirección al login
-  // null | 'expired' | 'forced'
   const expiredReason = ref(null)
 
   function showWarning(minutes = 5) {

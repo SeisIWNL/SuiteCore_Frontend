@@ -1,13 +1,5 @@
-// src/modules/main/services/dashboardApi.service.js
 import http from '@/services/http.js'
 
-/**
- * Dashboard principal — datos nativos del backend (SCNO), sin Grafana.
- *
- * GET /dashboard/summary                 → estado + indicadores
- * GET /dashboard/charts/modules-status   → barras: operativos/advertencia/críticos
- * GET /dashboard/charts/services-status  → dona: operativos/caídos
- */
 const BASE = '/dashboard'
 
 export const dashboardApiService = {

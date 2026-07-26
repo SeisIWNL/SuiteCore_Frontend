@@ -144,9 +144,6 @@ function fmtPct(v) {
   return `${Number(v).toFixed(1)}%`
 }
 
-// Anillo de porcentaje (SVG con stroke-dasharray), compilado como parte
-// del template de este SFC para que el CSS con scope se aplique bien
-// (un componente aparte creado con h() no hereda el atributo de scope).
 const RING_R = 52
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_R
 

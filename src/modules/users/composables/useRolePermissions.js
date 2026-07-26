@@ -1,4 +1,3 @@
-// src/modules/roles/composables/useRolePermissions.js
 import { ref, reactive, computed } from 'vue'
 import { permissionService } from '@/modules/users/services/permission.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
@@ -6,13 +5,9 @@ import { useLoaderStore } from '@/stores/loader.js'
 export function useRolePermissions(gidNumber) {
   const loader = useLoaderStore()
 
-  // Catálogo maestro agrupado por bloque
   const blocks = ref([])
-  // Estado de cada menú: { [menuId]: boolean }
   const checked = reactive({})
-  // Snapshot inicial para detectar cambios
   const initial = ref({})
-  // Ids de menús bloqueados (no editables) — ej. Dashboard
   const lockedIds = reactive(new Set())
 
   const roleName = ref('')
@@ -21,7 +16,6 @@ export function useRolePermissions(gidNumber) {
   const saving   = ref(false)
   const saved    = ref(false)
 
-  // El Dashboard siempre visible y no editable.
   function isDashboard(menu) {
     return menu?.slug === '/dashboard' || /dashboard/i.test(menu?.name ?? '')
   }
@@ -29,7 +23,6 @@ export function useRolePermissions(gidNumber) {
     return lockedIds.has(menuId)
   }
 
-  // ── Carga: el endpoint ya devuelve TODOS los módulos con isAssigned ──
   async function fetchPermissions() {
     loading.value = true
     error.value   = null
@@ -47,12 +40,10 @@ export function useRolePermissions(gidNumber) {
           menus: b.menus ?? [],
         }))
 
-      // Inicializa el estado de checkboxes a partir de isAssigned
       const snapshot = {}
       lockedIds.clear()
       for (const block of blocks.value) {
         for (const m of block.menus ?? []) {
-          // El Dashboard siempre está activo y no es editable
           const locked = isDashboard(m)
           if (locked) lockedIds.add(m.id)
           const isOn = locked ? true : m.isAssigned === true
@@ -81,13 +72,11 @@ export function useRolePermissions(gidNumber) {
           .filter(([, on]) => on)
           .map(([id]) => Number(id))
       )
-      // Garantiza que los módulos bloqueados (Dashboard) siempre se envíen
       for (const id of lockedIds) ids.add(Number(id))
       const menuIds = [...ids]
 
       await permissionService.updateRoleMenus(gidNumber, menuIds)
 
-      // Actualiza el snapshot al estado guardado
       initial.value = { ...checked }
       saved.value = true
       setTimeout(() => { saved.value = false }, 2500)
@@ -101,11 +90,10 @@ export function useRolePermissions(gidNumber) {
 
   // ── Helpers ────────────────────────────────────────────────
   function toggle(menuId) {
-    if (isLocked(menuId)) return        // Dashboard no editable
+    if (isLocked(menuId)) return        
     checked[menuId] = !checked[menuId]
   }
 
-  // Marca/desmarca un bloque completo (respeta los bloqueados)
   function toggleBlock(block, value) {
     for (const m of block.menus ?? []) {
       if (isLocked(m.id)) continue
@@ -151,11 +139,6 @@ export function useRolePermissions(gidNumber) {
   }
 }
 
-/**
- * Mapea un nombre de bloque a un ícono SVG y un acento.
- * El catálogo real usa: Principal, Monitoreo, Red y Seguridad,
- * Inventario, Auditoría, Usuarios.
- */
 export function blockVisual(blockName) {
   const n = (blockName ?? '').toLowerCase()
   if (n.includes('principal'))

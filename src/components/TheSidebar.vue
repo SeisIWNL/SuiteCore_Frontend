@@ -172,10 +172,6 @@ function slugifyId(name) {
     .replace(/(^-|-$)/g, '')
 }
 
-// -- Iconos ------------------------------------------------------
-// El backend (GET /Permission/Menus) no envia iconos, solo id/name/slug.
-// Se mantiene un catalogo local slug -> SVG (y bloque -> SVG), con un
-// fallback generico para cualquier modulo nuevo que aun no este aqui.
 const DEFAULT_GROUP_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/></svg>`
 const DEFAULT_ITEM_ICON  = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/></svg>`
 
@@ -200,11 +196,6 @@ const MENU_ICONS = {
   '/users':          `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
 }
 
-// -- Grupos dinamicos, armados desde /Permission/Menus ----------
-// El bloque "Principal" (Dashboard) no se incluye aqui: se muestra
-// siempre como item suelto arriba. El backend ya filtra qué módulos
-// devuelve según isEnable y el rol del token, así que todo lo que
-// venga en `menus[]` se muestra tal cual (no se filtra por isAssigned).
 const filteredGroups = computed(() => {
   const blocks = permsStore.menuBlocks ?? []
   return blocks

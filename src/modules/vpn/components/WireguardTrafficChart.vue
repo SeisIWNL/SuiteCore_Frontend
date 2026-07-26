@@ -19,7 +19,7 @@ import { formatBytes } from '@/modules/vpn/composables/useVpn.js'
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
 
 const props = defineProps({
-  history: { type: Array, default: () => [] },   // [{ label, rx, tx }]
+  history: { type: Array, default: () => [] },  
 })
 
 const chartData = computed(() => {

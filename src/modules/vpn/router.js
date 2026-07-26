@@ -1,6 +1,3 @@
-// src/modules/vpn/router.js
-// Solo exporta children — el DashboardLayout lo provee router/index.js
-
 export const vpnRoutes = [
   {
     path: '/vpn',

@@ -1,4 +1,3 @@
-// src/stores/loader.js
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -7,8 +6,7 @@ export const useLoaderStore = defineStore('loader', () => {
   const message   = ref('Cargando')
 
   /**
-   * Muestra el loader global.
-   * @param {string} msg - Texto opcional bajo el logo
+   * @param {string} msg 
    */
   function show(msg = 'Cargando') {
     message.value   = msg
@@ -20,10 +18,6 @@ export const useLoaderStore = defineStore('loader', () => {
     message.value   = 'Cargando'
   }
 
-  /**
-   * Envuelve una promesa mostrando el loader mientras dura.
-   * Uso: await loader.wrap(fetchData(), 'Obteniendo datos...')
-   */
   async function wrap(promise, msg = 'Cargando') {
     show(msg)
     try {

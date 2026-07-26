@@ -1,14 +1,12 @@
-// src/modules/inventory/composables/useNetboxResource.js
 import { ref, computed } from 'vue'
 import { useLoaderStore } from '@/stores/loader.js'
 
 /**
  *
- * @param {Function} fetchFn      función del servicio que devuelve el array
+ * @param {Function} fetchFn      
  * @param {object}   options
- * @param {string[]} options.searchFields  campos por los que se busca (soporta
- *                                          rutas anidadas: 'site.name')
- * @param {string}   options.loaderMessage mensaje del loader global
+ * @param {string[]} options.searchFields  
+ * @param {string}   options.loaderMessage 
  */
 export function useNetboxResource(fetchFn, options = {}) {
   const {

@@ -1,4 +1,3 @@
-// src/modules/backups/composables/useBackups.js
 import { ref, computed } from 'vue'
 import { backupsService } from '@/modules/backups/services/backups.service.js'
 import { useLoaderStore } from '@/stores/loader.js'

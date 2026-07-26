@@ -1,21 +1,16 @@
-// src/modules/vpn/composables/useVpn.js
 import { ref, computed } from 'vue'
 import { vpnService } from '@/modules/vpn/services/vpn.service.js'
 
 export function useVpn() {
-  // Cada fuente tiene su propio estado para que un fallo no afecte al resto
   const status    = ref({ data: null, loading: false, error: null })
   const wireguard = ref({ data: null, loading: false, error: null })
   const wgStats   = ref({ data: null, loading: false, error: null })
   const tailscale = ref({ data: null, loading: false, error: null })
   const policy    = ref({ data: null, loading: false, error: null })
 
-  // Filtro/búsqueda de máquinas Tailscale
   const searchQuery  = ref('')
-  const statusFilter = ref('all')   // 'all' | 'online' | 'offline'
+  const statusFilter = ref('all')
 
-  // Historial de tráfico WireGuard (para el gráfico). Cada refresco agrega
-  // un punto con el delta respecto a la medición anterior.
   const trafficHistory = ref([])   // [{ t, rx, tx }]
   const MAX_POINTS = 16
   let lastSample = null
@@ -56,7 +51,6 @@ export function useVpn() {
       loadOne(tailscale, () => vpnService.getTailscale(), silent),
       loadOne(policy,    () => vpnService.getAccessPolicy(), silent),
     ])
-    // Registra un punto de tráfico si los stats cargaron bien
     if (wgStats.value.data) pushTrafficSample(wgStats.value.data)
   }
 
@@ -68,7 +62,7 @@ export function useVpn() {
   function startAutoRefresh() {
     stopAutoRefresh()
     refreshTimer = setInterval(() => {
-      if (autoRefresh.value) loadAll(true)   // modo silencioso: sin skeletons
+      if (autoRefresh.value) loadAll(true) 
     }, REFRESH_MS)
   }
   function stopAutoRefresh() {
@@ -125,7 +119,6 @@ export function formatBytes(bytes) {
   return `${val.toFixed(1)} ${units[i]}`
 }
 
-/** Ícono/emoji simple según el sistema operativo del peer. */
 export function osLabel(os) {
   const o = (os ?? '').toLowerCase()
   if (o.includes('win')) return 'Windows'

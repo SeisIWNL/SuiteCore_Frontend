@@ -1,26 +1,8 @@
-// src/modules/main/services/incidents.service.js
 import http from '@/services/http.js'
 
-/**
- * Incidentes / eventos (Graylog).
- *
- * GET /incidents/events           → eventos recientes
- * GET /incidents/security-events  → eventos de seguridad
- * GET /incidents/summary          → resumen
- * GET /incidents/charts/severity  → alertas por severidad
- * GET /incidents/charts/modules   → alertas por módulo
- */
 const BASE = '/incidents'
 
 export const incidentsService = {
-  /**
-   * → {
-   *     success, service, query, builtQuery, rangeSeconds, limit,
-   *     totalResults, messagesCount,
-   *     items: [{ id, index, timestamp, source, level, facility,
-   *               applicationName, message, fullMessage, remoteIp, streams[] }]
-   *   }
-   */
   async getEvents() {
     const { data } = await http.get(`${BASE}/events`)
     return data
@@ -32,11 +14,6 @@ export const incidentsService = {
   },
 }
 
-/**
- * Traduce el nivel syslog numérico a una etiqueta y un tono visual.
- * 0 Emergency · 1 Alert · 2 Critical · 3 Error · 4 Warning
- * 5 Notice · 6 Informational · 7 Debug
- */
 export function levelInfo(level) {
   const n = Number(level)
   if (Number.isNaN(n)) return { label: 'Desconocido', tone: 'muted' }
@@ -48,7 +25,6 @@ export function levelInfo(level) {
   return { label: 'Debug', tone: 'muted' }
 }
 
-/** Fecha corta para la lista de eventos: "17/07 03:49:10". */
 export function shortTime(iso) {
   if (!iso) return '—'
   const d = new Date(iso)

@@ -1,17 +1,7 @@
-// src/modules/roles/services/permission.service.js
 import http from '@/services/http.js'
 
-/**
- * Permission — administración de roles (grupos LDAP) y sus módulos.
- *
- * GET  /api/Permission/Roles                       → roles con usuarios
- * GET  /api/Permission/Menus                       → catálogo maestro de módulos
- * GET  /api/Permission/Roles/:gidNumber/menus      → módulos asignados a un rol
- * PUT  /api/Permission/Roles/:gidNumber/menus      → asignar módulos a un rol
- */
 export const permissionService = {
   /**
-   * Lista de roles (grupos). El campo `id` es el gidNumber.
    * @returns {Promise<{ total, roles: Array<{
    *   id, name, description, totalUsers, users: Array<object>
    * }> }>}
@@ -22,7 +12,6 @@ export const permissionService = {
   },
 
   /**
-   * Catálogo maestro de módulos del dashboard, agrupados por bloque.
    * @returns {Promise<{ role, total, menus: Array<{
    *   block, order, menus: Array<{ id, name, slug }>
    * }> }>}
@@ -33,7 +22,6 @@ export const permissionService = {
   },
 
   /**
-   * Módulos a los que un rol tiene acceso, agrupados por bloque.
    * @param {string} gidNumber
    * @returns {Promise<{ gidNumber, total, menus: Array<{
    *   block, order, menus: Array<{ id, name, slug }>
@@ -47,7 +35,6 @@ export const permissionService = {
   },
 
   /**
-   * Asigna los módulos visibles para un rol.
    * @param {string} gidNumber
    * @param {number[]} menuIds
    * @returns {Promise<{ message, gidNumber }>}

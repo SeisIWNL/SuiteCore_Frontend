@@ -40,7 +40,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   // ── Actions ──────────────────────────────────────────────────
   async function login({ username, password, rememberMe }) {
-    // authService.login ya retorna response.data gracias al { data } de axios
     const response = await authService.login(username, password)
 
     // Guarda en estado reactivo
@@ -54,8 +53,6 @@ export const useAuthStore = defineStore('auth', () => {
     storage.setItem('auth_expires', response.expiresAt)
     storage.setItem('auth_user',    JSON.stringify(response.user))
 
-    // Carga los módulos permitidos para el usuario (resuelto por el backend
-    // vía el token, sin necesidad de conocer su gidNumber)
     try {
       await ensurePermissions(true)
     } catch {
@@ -69,9 +66,6 @@ export const useAuthStore = defineStore('auth', () => {
     _clearState()
   }
 
-  // fetchMe — se llama desde el router guard al cargar cada página
-  // NO llama al backend porque /auth/me puede no existir
-  // Confía en el storage + expiresAt de la API
   function fetchMe() {
     // Sin token → no hay sesión
     if (!token.value) return
@@ -94,15 +88,10 @@ export const useAuthStore = defineStore('auth', () => {
         _clearState()
       }
     } else {
-      // Token existe pero no hay user → estado inconsistente → limpia
       _clearState()
     }
   }
 
-  // ensurePermissions — garantiza que los módulos permitidos del usuario
-  // estén cargados (p. ej. tras un F5). Idempotente: no recarga si ya están.
-  // El backend resuelve el rol a partir del token, así que no hace falta
-  // averiguar el gidNumber del usuario en el front.
   async function ensurePermissions(force = false) {
     if (!user.value) return
     const perms = usePermissionsStore()

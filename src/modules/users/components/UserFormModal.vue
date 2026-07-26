@@ -143,7 +143,6 @@ const props = defineProps({
 })
 defineEmits(['close', 'save'])
 
-// Nombre del rol de contexto (para el TextField de crear)
 const contextRoleName = computed(() => props.modal.role?.name ?? '')
 </script>
 

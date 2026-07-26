@@ -347,8 +347,6 @@ function okClass(v) {
   return 'health__tag--warn'
 }
 
-// El backdrop del modal de bloqueo/desbloqueo solo cierra en el resultado
-// final; mientras está en progreso no se puede interrumpir.
 function onSecurityBackdropClick() {
   if (securityFlow.mode === 'result') closeSecurityFlow()
 }

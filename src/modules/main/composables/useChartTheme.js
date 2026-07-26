@@ -1,5 +1,3 @@
-// src/modules/main/composables/useChartTheme.js
-
 /**
  * Lee las variables CSS del tema actual y devuelve colores concretos
  * para Chart.js (que no entiende var(--x)). Se recalcula al llamar,

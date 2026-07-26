@@ -1,4 +1,3 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/modules/auth/store.js'
 
@@ -20,11 +19,9 @@ import DashboardLayout from '@/layouts/DashboardLayout.vue'
 // ── Ensambla todas las rutas ──────────────────────────────────
 const routes = [
   { path: '/', redirect: '/dashboard' },
-  
-  // Auth — sin layout del dashboard
   ...authRoutes,
 
-  // Dashboard — layout global compartido, todos los módulos como hijos
+  // Dashboard — layout global compartido
   {
     path: '/',
     component: DashboardLayout,
@@ -39,11 +36,9 @@ const routes = [
       ...vpnRoutes,
       ...sdnRoutes,
       ...alertsRoutes,
-      // ...serversRoutes,   ← cada módulo nuevo se agrega aquí
     ],
   },
 
-  // 404 — siempre al final
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -52,7 +47,6 @@ export const router = createRouter({
   routes,
 })
 
-// ── Navigation guard global ───────────────────────────────────
 import { usePermissionsStore } from '@/stores/permissions.js'
 
 router.beforeEach(async (to) => {
@@ -61,27 +55,22 @@ router.beforeEach(async (to) => {
   if (!auth.initialized) await auth.fetchMe()
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    // Evita redirigir si ya estamos yendo al login
     if (to.name === 'login') return
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
   if (to.meta.requiresGuest && auth.isAuthenticated) {
-    // Evita redirigir si ya estamos yendo al dashboard
     if (to.name === 'dashboard') return
     return { name: 'dashboard' }
   }
 
   // ── Control de acceso por módulo (RBAC) ─────────────────────
   if (to.meta.requiresAuth && auth.isAuthenticated) {
-    // Garantiza que los permisos del usuario estén cargados (p. ej. tras F5)
     await auth.ensurePermissions()
 
     const perms = usePermissionsStore()
-    // El path base del módulo (ej. '/backups/x/history' → '/backups')
     const baseSlug = '/' + (to.path.split('/').filter(Boolean)[0] ?? '')
 
-    // El dashboard siempre permitido; si no tiene acceso → redirige
     if (baseSlug !== '/dashboard' && !perms.canAccess(baseSlug)) {
       return { name: 'dashboard', query: { denied: baseSlug } }
     }

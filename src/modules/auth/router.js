@@ -1,5 +1,3 @@
-// src/modules/auth/router.js
-
 export const authRoutes = [
   {
     path: '/login',

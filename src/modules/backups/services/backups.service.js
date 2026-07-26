@@ -1,15 +1,5 @@
-// src/modules/backups/services/backups.service.js
 import http from '@/services/http.js'
 
-/**
- * Oxidized — respaldos de configuración de dispositivos.
- *
- * GET /api/oxidized/devices                             → lista de dispositivos
- * GET /api/oxidized/backups                             → lista de backups
- * GET /api/oxidized/devices/:deviceName/backup          → config más reciente
- * GET /api/oxidized/devices/:deviceName/backup?oid=...  → config de versión específica
- * GET /api/oxidized/devices/:deviceName/versions        → historial de versiones
- */
 export const backupsService = {
   /**
    * @returns {Promise<{ total, devices: [] }>}
@@ -28,8 +18,6 @@ export const backupsService = {
   },
 
   /**
-   * Config de un dispositivo. Sin parámetros devuelve el más reciente.
-   * Con { oid, epoch, num } devuelve esa versión específica del historial.
    *
    * @param {string} deviceName
    * @param {{ oid?: string, epoch?: number, num?: number }} [params]

@@ -1,14 +1,3 @@
-// src/composables/useSessionWatcher.js
-//
-// Monitorea la expiración del token JWT en segundo plano.
-// Se llama UNA sola vez desde App.vue al montar la aplicación.
-//
-// Lógica:
-//  - Lee la fecha de expiración guardada en storage (auth_expires)
-//  - Calcula cuánto tiempo falta para que expire
-//  - 5 minutos antes → muestra aviso de "sesión por expirar"
-//  - Al expirar → cierra sesión y redirige al login con mensaje
-
 import { ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore }    from '@/modules/auth/store.js'

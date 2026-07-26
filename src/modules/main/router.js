@@ -1,4 +1,3 @@
-// src/modules/main/router.js
 export const mainRoutes = [
   {
     path: '/dashboard',

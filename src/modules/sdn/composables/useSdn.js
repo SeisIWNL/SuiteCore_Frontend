@@ -1,4 +1,3 @@
-// src/modules/sdn/composables/useSdn.js
 import { ref, reactive, computed } from 'vue'
 import { sdnService } from '@/modules/sdn/services/sdn.service.js'
 
@@ -38,7 +37,6 @@ export function useSdn() {
     flows.value.loading || mkInfo.value.loading || mkIfaces.value.loading
   )
 
-  // ── Derivados MikroTik ─────────────────────────────────────
   const memoryUsed = computed(() => {
     const d = mkInfo.value.data
     if (!d) return null
@@ -55,32 +53,28 @@ export function useSdn() {
   const flowCount  = computed(() => flows.value.data?.flowCount ?? 0)
   const statPorts  = computed(() => statistics.value.data?.ports ?? [])
 
-  // ¿El servicio está en línea? (status suele ser "online"/"ok")
   const isOnline = computed(() => {
     const s = (health.value.data?.status ?? '').toLowerCase()
     return s === 'online' || s === 'ok' || s === 'healthy'
   })
 
-  // ── Acciones: seguridad (bloquear/desbloquear IP) ──────────
   const security = ref({
     ip: '',
     loading: false,
-    error: null,   // error de validación del formato de IP (inline, sin red)
+    error: null,
   })
 
-  // Progreso → resultado del bloqueo/desbloqueo, mostrado en un popup.
   const securityFlow = reactive({
     open: false,
-    mode: 'progress',   // 'progress' | 'result'
-    tone: 'ok',         // 'ok' | 'error' (solo en mode 'result')
+    mode: 'progress',   
+    tone: 'ok',         
     title: '',
     message: '',
-    detail: null,       // respuesta cruda del backend, para el detalle del popup
+    detail: null,       
   })
 
   function isValidIp(ip) {
     const s = (ip ?? '').trim()
-    // IPv4 simple (con posible /máscara)
     return /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/.test(s)
   }
 
@@ -117,8 +111,6 @@ export function useSdn() {
     }
     security.value.loading = false
 
-    // Igual que en onboarding/retiro: un error HTTP siempre gana, sin
-    // importar lo que diga el "status" dentro del cuerpo.
     const ok = !httpFailed && (data?.status === 'success' || data?.status === 'ok')
 
     securityFlow.mode = 'result'
@@ -137,7 +129,6 @@ export function useSdn() {
     }
   }
 
-  // ── Acciones: automatización ───────────────────────────────
   const automation = ref({
     action: '',
     loading: false,

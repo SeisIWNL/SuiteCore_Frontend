@@ -1,11 +1,6 @@
-// src/modules/main/services/dashboard.service.js
 import { inventoryService, subnetOf } from '@/modules/inventory/services/inventory.service.js'
 import { backupsService } from '@/modules/backups/services/backups.service.js'
 
-/**
- * Agrega datos de varios servicios para alimentar los widgets del dashboard.
- * Cada método devuelve datos ya listos para graficar (sin lógica de Chart.js).
- */
 export const dashboardService = {
   /**
    * NetBox — resumen de direcciones IP agrupadas por subred + estado.
@@ -55,7 +50,6 @@ export const dashboardService = {
   },
 
   /**
-   * Oxidized — resumen de estado de respaldos de dispositivos.
    * @returns {Promise<{
    *   total, success, failed,
    *   byGroup: Array<{ group, success, failed }>

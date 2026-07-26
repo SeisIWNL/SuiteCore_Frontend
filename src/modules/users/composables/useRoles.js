@@ -1,4 +1,3 @@
-// src/modules/roles/composables/useRoles.js
 import { ref, reactive, computed } from 'vue'
 import { permissionService } from '@/modules/users/services/permission.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
@@ -11,8 +10,6 @@ export function useRoles() {
   const loading = ref(false)
 
   const searchQuery = ref('')
-
-  // Roles con su panel de usuarios expandido (Set de ids)
   const expanded = reactive(new Set())
 
   // ── Fetch ──────────────────────────────────────────────────
@@ -50,7 +47,6 @@ export function useRoles() {
   const totalAssignments = computed(() =>
     roles.value.reduce((sum, r) => sum + (r.totalUsers ?? 0), 0)
   )
-  // Usuarios únicos (un usuario puede estar en varios roles)
   const uniqueUsers = computed(() => {
     const set = new Set()
     for (const r of roles.value) {
@@ -82,10 +78,6 @@ export function useRoles() {
   }
 }
 
-/**
- * Helpers de presentación para roles. Mapea ciertos roles conocidos
- * a un ícono/acento, con un fallback genérico.
- */
 export function roleVisual(role) {
   const name = (role?.name ?? '').toLowerCase()
   if (name.includes('admin') && name.includes('network'))

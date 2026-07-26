@@ -18,11 +18,9 @@ const authStore = useAuthStore()
 const { start, clearTimers } = useSessionWatcher()
 
 onMounted(() => {
-  // Arranca el watcher solo si el usuario ya está autenticado al cargar
   if (authStore.isAuthenticated) start()
 })
 
-// Si el usuario hace login después (en la misma pestaña), arranca el watcher
 watch(() => authStore.isAuthenticated, (authenticated) => {
   if (authenticated) {
     start()

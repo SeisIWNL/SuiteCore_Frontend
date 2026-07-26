@@ -1,8 +1,4 @@
-// src/modules/roles/router.js
-// Solo exporta children — el DashboardLayout lo provee router/index.js
-
 export const usersRoutes = [
-  // ── Gestión de roles ──────────────────────────────────────
   {
     path: '/users',
     name: 'users',

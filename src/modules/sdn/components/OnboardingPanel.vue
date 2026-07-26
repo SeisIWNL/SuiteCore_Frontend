@@ -343,22 +343,17 @@ const props = defineProps({
 
 const fmtDate = formatDateTime
 
-// El backdrop solo cierra el modal en confirmación (cancela) o resultado
-// (cierra). Mientras está en progreso, no se puede interrumpir haciendo clic afuera.
 function onModalBackdropClick() {
   if (props.onboardFlow.mode === 'confirm') props.cancelOnboarding()
   else if (props.onboardFlow.mode === 'result') props.closeOnboardResult()
 }
 
-// El backdrop cancela en confirmación/motivo, y cierra en resultado. En
-// progreso no se puede interrumpir haciendo clic afuera.
 function onDecommissionBackdropClick() {
   const mode = props.decommissionFlow.mode
   if (mode === 'confirm' || mode === 'reason') props.cancelDecommission()
   else if (mode === 'result') props.closeDecommissionResult()
 }
 
-// ── Buscar hosts en la red (GET /onboarding/candidates) ────────
 const searching = ref(false)
 const searchModal = reactive({ open: false, tone: 'ok', title: '', message: '' })
 
@@ -423,10 +418,6 @@ function riskClass(r) {
   return 'risk--low'
 }
 
-// ── Historial de onboarding: dispositivo por candidateSnapshot ─────
-// Cada plan ya trae la info del candidato incrustada (candidateSnapshot,
-// con respaldo en plan.candidate) — no hace falta cruzar con la tabla
-// de Hosts administrados.
 function planCandidate(plan) {
   return plan.candidateSnapshot ?? plan.plan?.candidate ?? null
 }
@@ -438,7 +429,6 @@ function deviceIp(plan) {
   const c = planCandidate(plan)
   return c?.management_ip || '—'
 }
-/** Prioriza quién aprobó el plan; si aún no está aprobado, muestra quién lo solicitó. */
 function responsibleName(plan) {
   return plan.approvedBy || plan.requestedBy || '—'
 }

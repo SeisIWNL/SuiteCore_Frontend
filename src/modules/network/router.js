@@ -1,4 +1,3 @@
-// src/modules/network/router.js — solo children
 export const networkRoutes = [
   {
     path: '/network',
