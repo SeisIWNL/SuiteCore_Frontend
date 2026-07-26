@@ -1,5 +1,5 @@
 // src/modules/sdn/composables/useSdn.js
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { sdnService } from '@/modules/sdn/services/sdn.service.js'
 
 export function useSdn() {
@@ -65,9 +65,17 @@ export function useSdn() {
   const security = ref({
     ip: '',
     loading: false,
-    error: null,
-    message: null,
-    messageType: null,   // 'success' | 'error'
+    error: null,   // error de validación del formato de IP (inline, sin red)
+  })
+
+  // Progreso → resultado del bloqueo/desbloqueo, mostrado en un popup.
+  const securityFlow = reactive({
+    open: false,
+    mode: 'progress',   // 'progress' | 'result'
+    tone: 'ok',         // 'ok' | 'error' (solo en mode 'result')
+    title: '',
+    message: '',
+    detail: null,       // respuesta cruda del backend, para el detalle del popup
   })
 
   function isValidIp(ip) {
@@ -76,28 +84,56 @@ export function useSdn() {
     return /^(\d{1,3}\.){3}\d{1,3}(\/\d{1,2})?$/.test(s)
   }
 
+  function closeSecurityFlow() {
+    securityFlow.open = false
+  }
+
   async function runBlockIp(block = true) {
     const ip = security.value.ip.trim()
     security.value.error = null
-    security.value.message = null
     if (!isValidIp(ip)) {
       security.value.error = 'Ingresa una dirección IP válida (ej. 192.168.1.100).'
       return
     }
+
+    securityFlow.open = true
+    securityFlow.mode = 'progress'
+    securityFlow.title = block ? 'Bloqueando IP' : 'Desbloqueando IP'
+    securityFlow.message = block ? `Bloqueando la IP ${ip}...` : `Desbloqueando la IP ${ip}...`
+    securityFlow.detail = null
+
     security.value.loading = true
+    let data = null
+    let httpFailed = false
+    let httpStatus = null
+    let httpMessage = null
     try {
-      const res = block
-        ? await sdnService.blockIp(ip)
-        : await sdnService.unblockIp(ip)
-      security.value.messageType = 'success'
-      security.value.message =
-        res?.message ??
-        `IP ${ip} ${block ? 'bloqueada' : 'desbloqueada'} correctamente.`
+      data = block ? await sdnService.blockIp(ip) : await sdnService.unblockIp(ip)
     } catch (err) {
-      security.value.messageType = 'error'
-      security.value.message = err.message ?? 'No se pudo completar la acción.'
-    } finally {
-      security.value.loading = false
+      httpFailed = true
+      httpStatus = err.status
+      httpMessage = err.message
+      data = err.data
+    }
+    security.value.loading = false
+
+    // Igual que en onboarding/retiro: un error HTTP siempre gana, sin
+    // importar lo que diga el "status" dentro del cuerpo.
+    const ok = !httpFailed && (data?.status === 'success' || data?.status === 'ok')
+
+    securityFlow.mode = 'result'
+    securityFlow.detail = data ?? null
+    if (ok) {
+      securityFlow.tone = 'ok'
+      securityFlow.title = 'Solicitud completada'
+      securityFlow.message =
+        data?.message ?? `La IP ${ip} fue ${block ? 'bloqueada' : 'desbloqueada'} correctamente.`
+    } else {
+      securityFlow.tone = 'error'
+      securityFlow.title = httpFailed
+        ? `Error HTTP ${httpStatus ?? ''}`.trim()
+        : `Estado: ${data?.status ?? 'desconocido'}`
+      securityFlow.message = data?.message ?? httpMessage ?? 'No se pudo completar la solicitud.'
     }
   }
 
@@ -134,8 +170,8 @@ export function useSdn() {
     health, topology, statistics, flows, mkInfo, mkIfaces,
     anyLoading, isOnline,
     memoryUsed, memoryPct, interfaces, flowsList, flowCount, statPorts,
-    security, automation,
-    runBlockIp, runAutomation,
+    security, securityFlow, automation,
+    runBlockIp, closeSecurityFlow, runAutomation,
     loadAll,
   }
 }

@@ -8,6 +8,16 @@
         <h1 class="inventory__title">Inventario y documentación</h1>
         <p class="inventory__sub">{{ activeTabMeta.subtitle }}</p>
       </div>
+      <div class="inventory__actions">
+        <button class="inventory__refresh" :disabled="refreshing" @click="onRefresh">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" :class="{ 'inventory__refresh-icon--spin': refreshing }">
+            <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+          </svg>
+          Actualizar
+        </button>
+      </div>
     </div>
 
     <!-- Pestañas -->
@@ -26,13 +36,13 @@
 
     <!-- Contenido -->
     <KeepAlive>
-      <DevicesPanel       v-if="activeTab === 'devices'" />
-      <VirtualizationPanel v-else-if="activeTab === 'virt'" />
-      <PhysicalPanel      v-else-if="activeTab === 'physical'" />
-      <IpAddressesPanel   v-else-if="activeTab === 'ips'" />
-      <VlansPanel         v-else-if="activeTab === 'vlans'" />
-      <ManufacturersPanel v-else-if="activeTab === 'manufacturers'" />
-      <RegionsPanel       v-else />
+      <DevicesPanel       v-if="activeTab === 'devices'" ref="panelRef" />
+      <VirtualizationPanel v-else-if="activeTab === 'virt'" ref="panelRef" />
+      <PhysicalPanel      v-else-if="activeTab === 'physical'" ref="panelRef" />
+      <IpAddressesPanel   v-else-if="activeTab === 'ips'" ref="panelRef" />
+      <VlansPanel         v-else-if="activeTab === 'vlans'" ref="panelRef" />
+      <ManufacturersPanel v-else-if="activeTab === 'manufacturers'" ref="panelRef" />
+      <RegionsPanel       v-else ref="panelRef" />
     </KeepAlive>
 
   </div>
@@ -47,6 +57,9 @@ import IpAddressesPanel    from '@/modules/inventory/components/IpAddressesPanel
 import VlansPanel          from '@/modules/inventory/components/VlansPanel.vue'
 import ManufacturersPanel  from '@/modules/inventory/components/ManufacturersPanel.vue'
 import RegionsPanel        from '@/modules/inventory/components/RegionsPanel.vue'
+import { useLoaderStore } from '@/stores/loader.js'
+
+const loader = useLoaderStore()
 
 const svg = (paths) =>
   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`
@@ -82,22 +95,34 @@ const TABS = [
     subtitle: 'Fabricantes de los equipos inventariados',
     icon: svg('<path d="M2 20h20M4 20V8l5 3V8l5 3V8l5 3v9"/>'),
   },
-  //{
-  //  key: 'regions', label: 'Regiones',
-  //  subtitle: 'Regiones geográficas del inventario',
-  //  icon: svg('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
-  //},
+  {
+    key: 'regions', label: 'Regiones',
+    subtitle: 'Regiones geográficas del inventario',
+    icon: svg('<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>'),
+  },
 ]
 
 const activeTab = ref('devices')
+const panelRef = ref(null)
+const refreshing = ref(false)
 
 const activeTabMeta = computed(() =>
   TABS.find(t => t.key === activeTab.value) ?? TABS[0]
 )
+
+async function onRefresh() {
+  if (!panelRef.value?.refresh) return
+  refreshing.value = true
+  try {
+    await panelRef.value.refresh()
+  } finally {
+    refreshing.value = false
+  }
+}
 </script>
 
 <style scoped>
-.inventory { max-width: auto; }
+.inventory { max-width: 1200px; }
 
 .inventory__head {
   display: flex; justify-content: space-between; align-items: flex-start;
@@ -113,6 +138,22 @@ const activeTabMeta = computed(() =>
   font-size: 1.4rem; font-weight: 700; color: var(--text-1);
 }
 .inventory__sub { font-size: .8rem; color: var(--text-3); margin-top: 5px; }
+
+.inventory__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.inventory__refresh {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 99px;
+  background: var(--bg-1); border: 1px solid var(--border);
+  color: var(--text-2); font-family: var(--font-sans);
+  font-size: .74rem; font-weight: 600; cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.inventory__refresh:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-1); border-color: var(--border-mid); }
+.inventory__refresh:disabled { opacity: .6; cursor: not-allowed; }
+.inventory__refresh-icon--spin { animation: inventorySpin .8s linear infinite; }
+@keyframes inventorySpin { to { transform: rotate(360deg); } }
+
 .inventory__ro {
   display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
   padding: 5px 11px; border-radius: 99px;

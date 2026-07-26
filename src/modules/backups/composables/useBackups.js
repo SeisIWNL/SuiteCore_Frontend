@@ -17,7 +17,7 @@ export function useBackups() {
     loading.value = true
     error.value   = null
     try {
-      loader.show('Cargando dispositivos...')
+      loader.show('Cargando respaldos...')
       const data = await backupsService.getDevices()
       devices.value = data.devices ?? []
     } catch (err) {

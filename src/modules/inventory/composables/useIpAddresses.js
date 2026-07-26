@@ -1,4 +1,3 @@
-// src/modules/inventory/composables/useIpAddresses.js
 import { ref, reactive, computed } from 'vue'
 import { inventoryService, subnetOf } from '@/modules/inventory/services/inventory.service.js'
 import { useLoaderStore } from '@/stores/loader.js'
@@ -9,29 +8,29 @@ export function useIpAddresses() {
   const ips     = ref([])
   const error   = ref(null)
   const loading = ref(false)
-  const loaded  = ref(false)   // evita refetch innecesario al cambiar de pestaña
+  const loaded  = ref(false) 
 
   // ── Filtros ────────────────────────────────────────────────
   const searchQuery  = ref('')
-  const statusFilter = ref('all')   // 'all' | valor de status (active, reserved, ...)
+  const statusFilter = ref('all')
 
   // Subredes colapsadas (Set de claves de subred)
   const collapsed = reactive(new Set())
 
   // ── Fetch ──────────────────────────────────────────────────
-  async function fetchIpAddresses(force = false) {
+  async function fetchIpAddresses(force = false, silent = false) {
     if (loaded.value && !force) return
     loading.value = true
     error.value   = null
     try {
-      loader.show('Cargando direcciones IP...')
+      if (!silent) loader.show('Cargando direcciones IP...')
       ips.value = await inventoryService.getIpAddresses()
       loaded.value = true
     } catch (err) {
       error.value = err.message ?? 'No se pudieron obtener las direcciones IP de NetBox.'
     } finally {
       loading.value = false
-      loader.hide()
+      if (!silent) loader.hide()
     }
   }
 

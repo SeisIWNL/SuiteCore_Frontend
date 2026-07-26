@@ -51,6 +51,9 @@ import { useNetboxResource } from '@/modules/inventory/composables/useNetboxReso
 import InvToolbar    from '@/modules/inventory/components/InvToolbar.vue'
 import StatChip      from '@/modules/inventory/components/StatChip.vue'
 import ResourceState from '@/modules/inventory/components/ResourceState.vue'
+import { useLoaderStore } from '@/stores/loader.js'
+
+const loader = useLoaderStore()
 
 const {
   error, loading,
@@ -67,6 +70,12 @@ function initials(name) {
 }
 
 onMounted(() => fetchItems())
+
+function refresh() {
+  loader.show('Actualizando fabricantes...')
+  return fetchItems(true, true).finally(() => loader.hide())
+}
+defineExpose({ refresh })
 </script>
 
 <style scoped>

@@ -129,10 +129,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { inventoryService, formatMB } from '@/modules/inventory/services/inventory.service.js'
 import { useNetboxResource } from '@/modules/inventory/composables/useNetboxResource.js'
+import { useLoaderStore } from '@/stores/loader.js'
 import InvToolbar    from '@/modules/inventory/components/InvToolbar.vue'
 import StatusBadge   from '@/modules/inventory/components/StatusBadge.vue'
 import StatChip      from '@/modules/inventory/components/StatChip.vue'
 import ResourceState from '@/modules/inventory/components/ResourceState.vue'
+
+const loader = useLoaderStore()
 
 const sub = ref('vms')
 
@@ -172,9 +175,17 @@ const totalClVms = computed(() =>
 )
 
 onMounted(() => {
-  vmFetch()
-  clFetch()
+  loader.show('Cargando virtualización...')
+  Promise.all([vmFetch(false, true), clFetch(false, true)])
+    .finally(() => loader.hide())
 })
+
+function refresh() {
+  loader.show('Actualizando virtualización...')
+  return Promise.all([vmFetch(true, true), clFetch(true, true)])
+    .finally(() => loader.hide())
+}
+defineExpose({ refresh })
 </script>
 
 <style scoped>

@@ -3,11 +3,6 @@ import { ref, computed } from 'vue'
 import { useLoaderStore } from '@/stores/loader.js'
 
 /**
- * Composable genérico para listas de solo lectura de NetBox.
- *
- * Cubre el patrón común de todas las pestañas nuevas: cargar una lista,
- * buscarla por texto, filtrarla por estado y cachearla entre cambios de
- * pestaña.
  *
  * @param {Function} fetchFn      función del servicio que devuelve el array
  * @param {object}   options
@@ -26,17 +21,17 @@ export function useNetboxResource(fetchFn, options = {}) {
   const items   = ref([])
   const error   = ref(null)
   const loading = ref(false)
-  const loaded  = ref(false)   // evita refetch al volver a la pestaña
+  const loaded  = ref(false)  
 
   const searchQuery  = ref('')
   const statusFilter = ref('all')
 
-  async function fetchItems(force = false) {
+  async function fetchItems(force = false, silent = false) {
     if (loaded.value && !force) return
     loading.value = true
     error.value   = null
     try {
-      loader.show(loaderMessage)
+      if (!silent) loader.show(loaderMessage)
       const data = await fetchFn()
       items.value = Array.isArray(data) ? data : []
       loaded.value = true
@@ -45,7 +40,7 @@ export function useNetboxResource(fetchFn, options = {}) {
       items.value = []
     } finally {
       loading.value = false
-      loader.hide()
+      if (!silent) loader.hide()
     }
   }
 

@@ -152,10 +152,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { inventoryService } from '@/modules/inventory/services/inventory.service.js'
 import { useNetboxResource } from '@/modules/inventory/composables/useNetboxResource.js'
+import { useLoaderStore } from '@/stores/loader.js'
 import InvToolbar    from '@/modules/inventory/components/InvToolbar.vue'
 import StatusBadge   from '@/modules/inventory/components/StatusBadge.vue'
 import StatChip      from '@/modules/inventory/components/StatChip.vue'
 import ResourceState from '@/modules/inventory/components/ResourceState.vue'
+
+const loader = useLoaderStore()
 
 const sub = ref('sites')
 
@@ -197,9 +200,17 @@ function occTone(pct) {
 }
 
 onMounted(() => {
-  siFetch()
-  rkFetch()
+  loader.show('Cargando infraestructura física...')
+  Promise.all([siFetch(false, true), rkFetch(false, true)])
+    .finally(() => loader.hide())
 })
+
+function refresh() {
+  loader.show('Actualizando infraestructura física...')
+  return Promise.all([siFetch(true, true), rkFetch(true, true)])
+    .finally(() => loader.hide())
+}
+defineExpose({ refresh })
 </script>
 
 <style scoped>

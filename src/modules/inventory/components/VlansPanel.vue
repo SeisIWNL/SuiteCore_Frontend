@@ -65,6 +65,9 @@ import InvToolbar    from '@/modules/inventory/components/InvToolbar.vue'
 import StatusBadge   from '@/modules/inventory/components/StatusBadge.vue'
 import StatChip      from '@/modules/inventory/components/StatChip.vue'
 import ResourceState from '@/modules/inventory/components/ResourceState.vue'
+import { useLoaderStore } from '@/stores/loader.js'
+
+const loader = useLoaderStore()
 
 const {
   items, error, loading,
@@ -81,6 +84,12 @@ const activeCount = computed(() =>
 )
 
 onMounted(() => fetchItems())
+
+function refresh() {
+  loader.show('Actualizando VLANs...')
+  return fetchItems(true, true).finally(() => loader.hide())
+}
+defineExpose({ refresh })
 </script>
 
 <style scoped>

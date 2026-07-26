@@ -202,6 +202,9 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useIpAddresses } from '@/modules/inventory/composables/useIpAddresses.js'
+import { useLoaderStore } from '@/stores/loader.js'
+
+const loader = useLoaderStore()
 
 const {
   error, loading,
@@ -213,6 +216,12 @@ const {
 } = useIpAddresses()
 
 onMounted(() => fetchIpAddresses())
+
+function refresh() {
+  loader.show('Actualizando direcciones IP...')
+  return fetchIpAddresses(true, true).finally(() => loader.hide())
+}
+defineExpose({ refresh })
 </script>
 
 <style scoped>

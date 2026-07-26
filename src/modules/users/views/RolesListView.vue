@@ -321,7 +321,6 @@ const {
   fetchRoles, toggleExpand, isExpanded, clearSearch,
 } = useRoles()
 
-// Acciones CRUD de usuarios; tras cada acción recarga la lista de roles
 const actions = useUserActions(fetchRoles, () => roles.value)
 
 function fullName(u) {

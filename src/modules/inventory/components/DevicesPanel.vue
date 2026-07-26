@@ -190,10 +190,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { inventoryService } from '@/modules/inventory/services/inventory.service.js'
 import { useNetboxResource } from '@/modules/inventory/composables/useNetboxResource.js'
+import { useLoaderStore } from '@/stores/loader.js'
 import InvToolbar    from '@/modules/inventory/components/InvToolbar.vue'
 import StatusBadge   from '@/modules/inventory/components/StatusBadge.vue'
 import StatChip      from '@/modules/inventory/components/StatChip.vue'
 import ResourceState from '@/modules/inventory/components/ResourceState.vue'
+
+const loader = useLoaderStore()
 
 const SUBTABS = [
   { key: 'devices', label: 'Dispositivos' },
@@ -243,10 +246,17 @@ function countOf(key) {
 }
 
 onMounted(() => {
-  devFetch()
-  typFetch()
-  rolFetch()
+  loader.show('Cargando dispositivos...')
+  Promise.all([devFetch(false, true), typFetch(false, true), rolFetch(false, true)])
+    .finally(() => loader.hide())
 })
+
+function refresh() {
+  loader.show('Actualizando dispositivos...')
+  return Promise.all([devFetch(true, true), typFetch(true, true), rolFetch(true, true)])
+    .finally(() => loader.hide())
+}
+defineExpose({ refresh })
 </script>
 
 <style scoped>

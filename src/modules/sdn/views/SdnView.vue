@@ -225,7 +225,7 @@
         </div>
       </div>
 
-      <!--<div class="panel">
+      <div class="panel">
         <div class="panel__head"><span class="panel__title">Seguridad SDN</span></div>
         <div class="act">
           <p class="act__hint">Bloquea o desbloquea el tráfico de una dirección IP en el controlador.</p>
@@ -235,14 +235,66 @@
             <button class="act__btn" :disabled="security.loading" @click="runBlockIp(false)">Desbloquear</button>
           </div>
           <div v-if="security.error" class="act__msg act__msg--err">{{ security.error }}</div>
-          <div v-else-if="security.message" class="act__msg"
-            :class="security.messageType === 'error' ? 'act__msg--err' : 'act__msg--ok'">
-            {{ security.message }}
-          </div>
         </div>
       </div>
-      -->
     </div>
+
+    <!-- Bloqueo/desbloqueo de IP: progreso → resultado -->
+    <Teleport to="body">
+      <div v-if="securityFlow.open" class="modal-backdrop" @click.self="onSecurityBackdropClick">
+        <div class="modal">
+
+          <!-- Progreso (no se puede cerrar) -->
+          <template v-if="securityFlow.mode === 'progress'">
+            <div class="modal__spinner" />
+            <div class="modal__title">{{ securityFlow.title }}</div>
+            <div class="modal__msg">{{ securityFlow.message }}</div>
+          </template>
+
+          <!-- Resultado final -->
+          <template v-else>
+            <div class="modal__icon" :class="securityFlow.tone === 'ok' ? 'modal__icon--ok' : 'modal__icon--error'">
+              <svg v-if="securityFlow.tone === 'ok'" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="modal__title">{{ securityFlow.title }}</div>
+            <div class="modal__msg">{{ securityFlow.message }}</div>
+
+            <!-- Detalle técnico de la solicitud -->
+            <div v-if="securityFlow.detail" class="sec-detail">
+              <div v-if="securityFlow.detail.ip" class="sec-detail__row">
+                <span>IP</span><code class="mono">{{ securityFlow.detail.ip }}</code>
+              </div>
+              <div v-if="securityFlow.detail.policy" class="sec-detail__row">
+                <span>Acción</span><strong>{{ securityFlow.detail.policy === 'block_ip' ? 'Bloqueo' : 'Desbloqueo' }}</strong>
+              </div>
+              <div v-if="securityFlow.detail.status" class="sec-detail__row">
+                <span>Estado</span><strong>{{ securityFlow.detail.status }}</strong>
+              </div>
+              <div v-if="securityFlow.detail.mikrotik" class="sec-detail__row">
+                <span>Dispositivo</span><code class="mono">{{ securityFlow.detail.mikrotik }}</code>
+              </div>
+              <div v-if="securityFlow.detail.execution_id" class="sec-detail__row">
+                <span>ID de ejecución</span><code class="mono">{{ shortExecId(securityFlow.detail.execution_id) }}</code>
+              </div>
+              <div v-if="securityFlow.detail.idempotent !== undefined" class="sec-detail__row">
+                <span>Solicitud repetida</span><strong>{{ securityFlow.detail.idempotent ? 'Sí' : 'No' }}</strong>
+              </div>
+            </div>
+
+            <button class="modal__ok" @click="closeSecurityFlow">OK</button>
+          </template>
+
+        </div>
+      </div>
+    </Teleport>
 
   </div>
 </template>
@@ -257,7 +309,7 @@ import { useLoaderStore } from '@/stores/loader.js'
 const {
   health, topology, flows, mkInfo, mkIfaces,
   anyLoading, isOnline, memoryPct, interfaces, flowCount,
-  security, runBlockIp,
+  security, securityFlow, runBlockIp, closeSecurityFlow,
   loadAll: loadSdn,
 } = useSdn()
 
@@ -295,6 +347,17 @@ function okClass(v) {
   return 'health__tag--warn'
 }
 
+// El backdrop del modal de bloqueo/desbloqueo solo cierra en el resultado
+// final; mientras está en progreso no se puede interrumpir.
+function onSecurityBackdropClick() {
+  if (securityFlow.mode === 'result') closeSecurityFlow()
+}
+
+function shortExecId(id) {
+  if (!id) return '—'
+  return id.length > 13 ? id.slice(0, 13) + '…' : id
+}
+
 // Refresco
 const lastRefresh = ref(null)
 const autoOn = ref(true)
@@ -319,7 +382,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.sdn { max-width: auto; display: flex; flex-direction: column; gap: 16px; }
+.sdn { max-width: 1320px; display: flex; flex-direction: column; gap: 16px; }
 
 .sdn__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .sdn__title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--text-1); }
@@ -411,6 +474,55 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .act__msg { font-size: .78rem; padding: 8px 11px; border-radius: var(--radius); }
 .act__msg--ok { background: var(--success-muted); color: var(--success); }
 .act__msg--err { background: var(--danger-muted); color: var(--danger); }
+
+/* Modal de bloqueo/desbloqueo de IP */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0,0,0,.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.modal {
+  width: 100%; max-width: 380px;
+  background: var(--bg-1); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 26px 22px;
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.4);
+}
+.modal__icon {
+  width: 46px; height: 46px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+}
+.modal__icon--ok { background: var(--success-muted); color: var(--success); }
+.modal__icon--error { background: var(--danger-muted); color: var(--danger); }
+.modal__title { font-family: var(--font-display); font-size: 1rem; font-weight: 700; color: var(--text-1); }
+.modal__msg { font-size: .84rem; color: var(--text-3); line-height: 1.5; }
+.modal__ok {
+  margin-top: 8px; padding: 8px 28px;
+  background: var(--accent); color: #fff; border: none;
+  border-radius: var(--radius); font-family: var(--font-sans);
+  font-size: .82rem; font-weight: 700; cursor: pointer;
+}
+.modal__ok:hover { filter: brightness(1.1); }
+.modal__spinner {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 3px solid var(--border); border-top-color: var(--accent);
+  animation: spin .7s linear infinite; margin-bottom: 4px;
+}
+
+/* Detalle técnico de la solicitud */
+.sec-detail {
+  width: 100%; margin-top: 4px; padding: 10px 12px;
+  background: var(--bg-2); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; flex-direction: column; gap: 7px;
+}
+.sec-detail__row {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: .76rem; color: var(--text-3); gap: 10px;
+}
+.sec-detail__row strong { color: var(--text-1); font-weight: 600; text-transform: capitalize; }
+.sec-detail__row .mono { font-family: var(--font-mono); font-size: .72rem; color: var(--text-1); }
 
 /* Salud del sistema de onboarding */
 .health { padding: 14px 16px; display: flex; flex-direction: column; gap: 11px; }
