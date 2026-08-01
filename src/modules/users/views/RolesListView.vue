@@ -321,6 +321,7 @@ const {
   fetchRoles, toggleExpand, isExpanded, clearSearch,
 } = useRoles()
 
+// Acciones CRUD de usuarios
 const actions = useUserActions(fetchRoles, () => roles.value)
 
 function fullName(u) {
@@ -480,7 +481,8 @@ onMounted(fetchRoles)
 .rcard__icon--critical { background: var(--danger-muted);  color: var(--danger); }
 .rcard__icon--security { background: var(--warning-muted); color: var(--warning); }
 .rcard__icon--audit    { background: var(--blue-muted);    color: var(--blue); }
-.rcard__icon--operator { background: var(--accent-muted);  color: var(--accent); }
+.rcard__icon--purple   { background: rgba(167,139,250,.14); color: #a78bfa; }
+.rcard__icon--teal     { background: rgba(45,212,191,.14);  color: #2dd4bf; }
 .rcard__icon--base     { background: var(--success-muted); color: var(--success); }
 
 .rcard__info { flex: 1; min-width: 0; }
@@ -499,7 +501,8 @@ onMounted(fetchRoles)
 .rcard__badge--critical { background: var(--danger-muted);  color: var(--danger); }
 .rcard__badge--security { background: var(--warning-muted); color: var(--warning); }
 .rcard__badge--audit    { background: var(--blue-muted);    color: var(--blue); }
-.rcard__badge--operator { background: var(--accent-muted);  color: var(--accent); }
+.rcard__badge--purple   { background: rgba(167,139,250,.14); color: #a78bfa; }
+.rcard__badge--teal     { background: rgba(45,212,191,.14);  color: #2dd4bf; }
 .rcard__badge--base     { background: var(--success-muted); color: var(--success); }
 .rcard__gid {
   font-family: var(--font-mono); font-size: .66rem; color: var(--text-3);

@@ -4,11 +4,9 @@ import { useLoaderStore } from '@/stores/loader.js'
 
 export function useRoles() {
   const loader = useLoaderStore()
-
   const roles   = ref([])
   const error   = ref(null)
   const loading = ref(false)
-
   const searchQuery = ref('')
   const expanded = reactive(new Set())
 
@@ -78,19 +76,32 @@ export function useRoles() {
   }
 }
 
+/**
+ * Helpers de presentación para roles. Mapea ciertos roles conocidos
+ */
 export function roleVisual(role) {
   const name = (role?.name ?? '').toLowerCase()
-  if (name.includes('admin') && name.includes('network'))
-    return { tone: 'critical', label: 'Administración' }
-  if (name.includes('netadmin') || name.includes('networkadmin'))
-    return { tone: 'critical', label: 'Administración' }
+
+  if (name.includes('superadmin') || name.includes('super_admin'))
+    return { tone: 'critical', label: 'Administración total' }
+
+  if ((name.includes('network') && name.includes('admin')) || name.includes('netadmin'))
+    return { tone: 'purple', label: 'Administración' }
+
   if (name.includes('security') || name.includes('secadmin'))
     return { tone: 'security', label: 'Seguridad' }
+
   if (name.includes('supervisor') || name.includes('audit'))
     return { tone: 'audit', label: 'Supervisión' }
-  if (name.includes('noc') || name.includes('operador'))
-    return { tone: 'operator', label: 'Operación' }
+
+  if (name.includes('noc') || name.includes('operador') || name.includes('operator'))
+    return { tone: 'teal', label: 'Operación' }
+
+  if (name.includes('viewer') || name.includes('readonly') || name.includes('read_only') || name.includes('lectura'))
+    return { tone: 'base', label: 'Lectura' }
+
   if (name.includes('all users') || name.includes('all'))
     return { tone: 'base', label: 'Base' }
+
   return { tone: 'default', label: 'Rol' }
 }
