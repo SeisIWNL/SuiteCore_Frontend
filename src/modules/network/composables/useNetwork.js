@@ -52,7 +52,7 @@ export function useNetwork() {
     return Math.max(0, (s.dispositivos ?? 0) - (s.dispositivosActivos ?? 0))
   })
 
-  // Disponibilidad = activos / total (el backend no la envía)
+  // Disponibilidad = activos / total 
   const availability = computed(() => {
     const s = summary.value.data
     if (!s || !s.dispositivos) return null

@@ -101,55 +101,6 @@
       </div>
 
       <div class="panel">
-        <div class="panel__head"><span class="panel__title">Dispositivos de red</span></div>
-        <div v-if="devTable.loading" class="panel__pad"><div v-for="i in 5" :key="i" class="row-sk" /></div>
-        <div v-else-if="devTable.error" class="panel__err">{{ devTable.error }}</div>
-        <div v-else-if="!devices.length" class="panel__empty">Sin dispositivos</div>
-        <div v-else class="tbl-wrap">
-          <table class="tbl">
-            <thead>
-              <tr><th class="tbl__th">Nombre</th><th class="tbl__th">IP</th><th class="tbl__th">Tipo</th><th class="tbl__th">Estado</th><th class="tbl__th">Última actualización</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="d in devices" :key="d.deviceId" class="tbl__tr">
-                <td class="tbl__td"><span class="strong">{{ d.display || d.hostname || d.sysName }}</span></td>
-                <td class="tbl__td"><code class="mono">{{ d.ip }}</code></td>
-                <td class="tbl__td">{{ d.type || '—' }}</td>
-                <td class="tbl__td">
-                  <span class="pill" :class="d.status === 1 ? 'pill--up' : 'pill--down'">
-                    {{ d.status === 1 ? 'Activo' : (d.statusLabel || 'Caído') }}
-                  </span>
-                </td>
-                <td class="tbl__td"><span class="muted">{{ d.last_polled || '—' }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="panel__head"><span class="panel__title">Interfaces de red</span></div>
-        <div v-if="ifTable.loading" class="panel__pad"><div v-for="i in 5" :key="i" class="row-sk" /></div>
-        <div v-else-if="ifTable.error" class="panel__err">{{ ifTable.error }}</div>
-        <div v-else-if="!interfaces.length" class="panel__empty">Sin interfaces</div>
-        <div v-else class="tbl-wrap">
-          <table class="tbl">
-            <thead>
-              <tr><th class="tbl__th">Dispositivo</th><th class="tbl__th">Interfaz</th><th class="tbl__th">Estado</th><th class="tbl__th">Administración</th><th class="tbl__th">Descripción</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="i in interfaces" :key="i.portId" class="tbl__tr">
-                <td class="tbl__td"><span class="strong">{{ deviceNameFor(i.deviceId) }}</span></td>
-                <td class="tbl__td"><code class="mono">{{ i.ifName }}</code></td>
-                <td class="tbl__td"><StateTag :value="i.ifOperStatus" /></td>
-                <td class="tbl__td"><StateTag :value="i.ifAdminStatus" /></td>
-                <td class="tbl__td"><span class="muted">{{ i.ifAlias || i.ifDescr || '—' }}</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <!--<div class="panel">
         <div class="panel__head"><span class="panel__title">Estado de interfaces</span></div>
         <div class="panel__body panel__body--center">
           <div v-if="ifChart.loading" class="chart-sk" />
@@ -158,8 +109,9 @@
         </div>
         <div class="panel__foot">Interfaces monitoreadas por LibreNMS</div>
       </div>
-      -->
-      <!--<div class="panel">
+
+      <!-- ocultar "Alertas de red por severidad"
+      <div class="panel">
         <div class="panel__head"><span class="panel__title">Alertas de red por severidad</span></div>
         <div class="panel__body">
           <div v-if="alertChart.loading" class="chart-sk" />
@@ -170,11 +122,11 @@
           />
         </div>
         <div class="panel__foot">Alertas activas en la red</div>
-      </div>-->
+      </div>
+      -->
     </div>
 
     <!-- Tablas -->
-    <!--
     <div class="net__tables">
       <div class="panel">
         <div class="panel__head"><span class="panel__title">Dispositivos de red</span></div>
@@ -196,13 +148,14 @@
                     {{ d.status === 1 ? 'Activo' : (d.statusLabel || 'Caído') }}
                   </span>
                 </td>
-                <td class="tbl__td"><span class="muted">{{ d.last_polled || '—' }}</span></td>
+                <td class="tbl__td"><span class="muted">{{ d.lastPolled || '—' }}</span></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
+      <!-- ocultar "Interfaces de red" y "Alertas de red"
       <div class="panel">
         <div class="panel__head"><span class="panel__title">Interfaces de red</span></div>
         <div v-if="ifTable.loading" class="panel__pad"><div v-for="i in 5" :key="i" class="row-sk" /></div>
@@ -257,7 +210,8 @@
           </table>
         </div>
       </div>
-    </div>-->
+      -->
+    </div>
 
   </div>
 </template>
@@ -301,12 +255,16 @@ const deviceSegments = computed(() => {
   ]
 })
 
+const TEMP_INVERT_INTERFACE_STATUS = true
+
 const interfaceSegments = computed(() => {
   const theme = readChartTheme()
   const d = ifChart.value.data?.datos ?? { activas: 0, inactivas: 0 }
+  const activas   = TEMP_INVERT_INTERFACE_STATUS ? (d.inactivas ?? 0) : (d.activas ?? 0)
+  const inactivas = TEMP_INVERT_INTERFACE_STATUS ? (d.activas ?? 0)   : (d.inactivas ?? 0)
   return [
-    { label: 'Activas',   value: d.activas ?? 0,   color: theme.success },
-    { label: 'Inactivas', value: d.inactivas ?? 0, color: theme.danger },
+    { label: 'Activas',   value: activas,   color: theme.success },
+    { label: 'Inactivas', value: inactivas, color: theme.danger },
   ]
 })
 
@@ -324,7 +282,7 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 </script>
 
 <style scoped>
-.net { max-width: auto; }
+.net { max-width: 1320px; }
 
 .net__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .net__title { font-family: var(--font-display); font-size: 1.5rem; font-weight: 800; color: var(--text-1); }
@@ -367,9 +325,8 @@ onUnmounted(() => { if (timer) clearInterval(timer) })
 .panel__err { padding: 16px; font-size: .8rem; color: var(--danger); }
 .panel__empty { padding: 30px; text-align: center; color: var(--text-3); font-size: .82rem; }
 
-.net__charts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
-.net__tables { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; align-items: start; }
-.net__charts .panel { height: 460px; }
+.net__charts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px; }
+.net__tables { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
 .net__tables .panel { height: 460px; }
 .net__tables .panel__pad,
 .net__tables .panel__err,
