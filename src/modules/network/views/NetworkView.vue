@@ -148,7 +148,7 @@
                     {{ d.status === 1 ? 'Activo' : (d.statusLabel || 'Caído') }}
                   </span>
                 </td>
-                <td class="tbl__td"><span class="muted">{{ d.lastPolled || '—' }}</span></td>
+                <td class="tbl__td"><span class="muted">{{ d.last_polled || '—' }}</span></td>
               </tr>
             </tbody>
           </table>
